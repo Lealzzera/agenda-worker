@@ -8,6 +8,6 @@ export interface ICreateClinicMember {
 }
 
 
-export interface IClinicRepository {
+export interface IClinicMemberRepository {
   create(tx: Prisma.TransactionClient, {clinicId, userId, role, status}: ICreateClinicMember): Promise<ClinicMember>
 }

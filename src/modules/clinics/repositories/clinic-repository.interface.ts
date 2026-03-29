@@ -7,11 +7,11 @@ export interface ICreateClinic {
   phone?: string;
   email?: string;
   address?: string;
-  postal_code?: string;
+  postalCode?: string;
   city?: string;
   state?: string;
 }
 
 export interface IClinicRepository {
-  create(tx: Prisma.TransactionClient, {name, slug, cnpj, phone, email, address, postal_code, city, state}: ICreateClinic): Promise<Clinic>
+  create(tx: Prisma.TransactionClient, {name, slug, cnpj, phone, email, address, postalCode, city, state}: ICreateClinic): Promise<Clinic>
 }
