@@ -1,10 +1,10 @@
 import { Plan } from "@prisma/client";
 import { ICreatePlan, IPlanRepository } from "./plan-repository.interface";
-import { prisma } from "@/db/prisma";
+import { PrismaClientOrTx } from "@/types/prisma.type";
 
 export class PlanRepository implements IPlanRepository {
-    async create({ name, code, priceMonthly, maxUsers, maxWhatsappSessions, maxMonthlySchedules }: ICreatePlan): Promise<Plan> {
-        const data = await prisma.plan.create({
+    async create(client: PrismaClientOrTx, { name, code, priceMonthly, maxUsers, maxWhatsappSessions, maxMonthlySchedules }: ICreatePlan): Promise<Plan> {
+        const data = await client.plan.create({
             data: {
                 name,
                 code,
@@ -17,8 +17,8 @@ export class PlanRepository implements IPlanRepository {
         return data
     }
 
-    async findByName(name: string): Promise<Plan | null> {
-        const data = await prisma.plan.findFirst({
+    async findByName(client: PrismaClientOrTx, name: string): Promise<Plan | null> {
+        const data = await client.plan.findFirst({
             where: {
                 name: name
             }
@@ -26,8 +26,8 @@ export class PlanRepository implements IPlanRepository {
         return data
     }
 
-    async findByCode(code: string): Promise<Plan | null> {
-        const data = await prisma.plan.findUnique({
+    async findByCode(client: PrismaClientOrTx, code: string): Promise<Plan | null> {
+        const data = await client.plan.findUnique({
             where: {
                 code
             }
@@ -35,4 +35,12 @@ export class PlanRepository implements IPlanRepository {
         return data
     }
 
+    async findPlanById(client: PrismaClientOrTx, id: string): Promise<Plan | null> {
+        const data = await client.plan.findUnique({
+            where: {
+                id
+            }
+        })
+        return data
+    }
 }

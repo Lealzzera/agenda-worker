@@ -1,3 +1,4 @@
+import { PrismaClientOrTx } from "@/types/prisma.type";
 import { Plan } from "@prisma/client";
 
 export interface ICreatePlan {
@@ -10,7 +11,8 @@ export interface ICreatePlan {
 }
 
 export interface IPlanRepository {
-    create({name, code, priceMonthly, maxUsers, maxWhatsappSessions, maxMonthlySchedules}: ICreatePlan): Promise<Plan>
-    findByName(name: string): Promise<Plan | null>
-    findByCode(code: string): Promise<Plan | null>
+    create(client: PrismaClientOrTx, {name, code, priceMonthly, maxUsers, maxWhatsappSessions, maxMonthlySchedules}: ICreatePlan): Promise<Plan>
+    findByName(client: PrismaClientOrTx, name: string): Promise<Plan | null>
+    findByCode(client: PrismaClientOrTx, code: string): Promise<Plan | null>
+    findPlanById(client: PrismaClientOrTx, id: string): Promise<Plan | null>
 }

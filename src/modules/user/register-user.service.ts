@@ -5,6 +5,9 @@ import { IClinicRepository } from "../clinics/repositories/clinic-repository.int
 import { IClinicMemberRepository } from "../clinic-member/repositories/clinic-member-repository.interface";
 import { hash } from "bcrypt";
 import { ClinicRole } from "@prisma/client";
+import { ISubscriptionRepository } from "../subscription/repositories/subscription-repository.interface";
+import { IPlanRepository } from "../plan/repositories/plan-repository.interface";
+import { UnauthorizedError } from "@/errors/unauthorized.error";
 
 interface RegisterUserRequest {
     clinicId: string;
@@ -26,10 +29,9 @@ interface RegisterUserResponse {
 }
 
 export class RegisterUserService {
-    constructor(private readonly userRepository: IUserRepository, private readonly clinicRepository: IClinicRepository, private readonly clinicMemberRepository: IClinicMemberRepository) {}
+    constructor(private readonly userRepository: IUserRepository, private readonly clinicRepository: IClinicRepository, private readonly clinicMemberRepository: IClinicMemberRepository, private readonly susbscriptionRepository: ISubscriptionRepository, private readonly planRepository: IPlanRepository ) {}
 
     async exec({clinicId, fullName, email, password, pictureUrl, userRole}: RegisterUserRequest): Promise<RegisterUserResponse> {
-        
         const doesTheClinicExist = await this.clinicRepository.findById(prisma, clinicId)
 
         if(!doesTheClinicExist) {
@@ -46,6 +48,19 @@ export class RegisterUserService {
 
         if(doesTheEmailAlreadyExist) {
             throw new BadRequestError("Email provided already exists");
+        }
+
+        const currentSubscription = await this.susbscriptionRepository.findActiveByClinicId(prisma, clinicId)
+
+        if(currentSubscription && currentSubscription.status !== "ACTIVE") {
+            throw new UnauthorizedError('Subscription is not active or in a trial mode')
+        }
+
+        const currentPlan = await this.planRepository.findPlanById(prisma, currentSubscription!.plan_id)
+        const clinicMembersCount = await this.clinicMemberRepository.countMembersByClinicId(prisma, clinicId)
+
+        if(currentPlan && currentPlan.max_users && currentPlan.max_users <= clinicMembersCount) {
+            throw new UnauthorizedError("Plan limit reached");
         }
 
         const passwordHashed = await hash(password, 6)

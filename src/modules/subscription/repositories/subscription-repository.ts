@@ -16,4 +16,15 @@ export class SubscriptionRepository implements ISubscriptionRepository {
         })
         return data;
     }
+
+    async findActiveByClinicId(client: PrismaClientOrTx, clinicId: string): Promise<Subscription | null> {
+        const data = await client.subscription.findFirst({
+            where: {
+                clinic_id: clinicId,
+                status: { in: ['ACTIVE', 'TRIALING'] }
+            }
+        })
+
+        return data || null;
+    }
 }

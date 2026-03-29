@@ -25,4 +25,12 @@ export class ClinicMemberRepository implements IClinicMemberRepository {
         return data
     }
 
+    async countMembersByClinicId(client: PrismaClientOrTx, clinicId: string): Promise<number> {
+        const data = await client.clinicMember.count({
+            where: {
+                clinic_id: clinicId
+            }
+        })
+        return data
+    }
 }
