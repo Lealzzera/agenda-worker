@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import makeCreatePlanService from "./factories/makeCreatePlanService";
+import makeCreateRegisterPlanServiceFactory from "./factories/make-create-register-plan-service.factory";
 
 
 export async function createPlanController(req: FastifyRequest, res: FastifyReply) {
@@ -15,7 +15,7 @@ export async function createPlanController(req: FastifyRequest, res: FastifyRepl
 
     const { name, code, priceMonthly, maxUsers, maxWhatsappSessions, maxMonthlySchedules } = createPlanBodySchema.parse(req.body)
 
-    const planService = makeCreatePlanService()
+    const planService = makeCreateRegisterPlanServiceFactory()
     await planService.exec({
             name,
             code,

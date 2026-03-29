@@ -1,4 +1,5 @@
-import { Prisma, User } from "@prisma/client";
+import { User } from "@prisma/client";
+import { PrismaClientOrTx } from "../../../types/prisma.type";
 
 export interface ICreateUser {
   full_name: string;
@@ -8,6 +9,6 @@ export interface ICreateUser {
 }
 
 export interface IUserRepository {
-    create(tx: Prisma.TransactionClient, {full_name, email, password_hash, picture_url}: ICreateUser): Promise<User>
+    create(client: PrismaClientOrTx, {full_name, email, password_hash, picture_url}: ICreateUser): Promise<User>
     findByEmail(email: string): Promise<User | null>
 }

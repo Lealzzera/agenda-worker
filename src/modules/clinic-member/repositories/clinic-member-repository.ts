@@ -1,9 +1,10 @@
-import { ClinicMember, Prisma } from "@prisma/client";
+import { ClinicMember } from "@prisma/client";
 import { IClinicMemberRepository, ICreateClinicMember } from "./clinic-member-repository.interface";
+import { PrismaClientOrTx } from "../../../types/prisma.type";
 
 export class ClinicMemberRepository implements IClinicMemberRepository {
-    async create(tx: Prisma.TransactionClient, { clinicId, userId, role, status }: ICreateClinicMember): Promise<ClinicMember> {
-        const data = await tx.clinicMember.create({
+    async create(client: PrismaClientOrTx, { clinicId, userId, role, status }: ICreateClinicMember): Promise<ClinicMember> {
+        const data = await client.clinicMember.create({
             data: {
                 clinic_id: clinicId,
                 user_id: userId,

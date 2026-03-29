@@ -1,4 +1,5 @@
-import { Prisma, Subscription, SubscriptionStatus } from "@prisma/client";
+import { Subscription, SubscriptionStatus } from "@prisma/client";
+import { PrismaClientOrTx } from "../../../types/prisma.type";
 
 export interface ICreateSubscription {
     clinicId: string;
@@ -10,5 +11,5 @@ export interface ICreateSubscription {
 }
 
 export interface ISubscriptionRepository {
-    create(tx: Prisma.TransactionClient, {clinicId, planId, status, trialEndsAt, currentPeriodStart, currentPeriodEnd}: ICreateSubscription): Promise<Subscription>
+    create(client: PrismaClientOrTx, {clinicId, planId, status, trialEndsAt, currentPeriodStart, currentPeriodEnd}: ICreateSubscription): Promise<Subscription>
 }

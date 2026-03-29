@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { makeCreateClinicService } from "./factories/makeCreateClinicService";
 import { z } from "zod";
+import { makeCreateRegisterClinicServiceFactory } from "./factories/make-create-register-clinic-service.factory";
 
 export async function registerClinicController(req: FastifyRequest, res: FastifyReply) {
  const registerClinicSchema = z.object({
@@ -44,7 +44,7 @@ export async function registerClinicController(req: FastifyRequest, res: Fastify
     const city = data.city || undefined;
     const state = data.state || undefined;
     
-    const registerClinicService = makeCreateClinicService();
+    const registerClinicService = makeCreateRegisterClinicServiceFactory();
     await registerClinicService.exec({
         userFullName,
         userEmail,

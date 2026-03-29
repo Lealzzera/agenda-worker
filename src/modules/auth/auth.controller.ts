@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import makeAuthService from "./factories/make-auth-service";
+import makeAuthServiceFactory from "./factories/make-auth-service.factory";
 
 export async function loginController(req: FastifyRequest, res: FastifyReply) {
     const bodySchema = z.object({
@@ -11,7 +11,7 @@ export async function loginController(req: FastifyRequest, res: FastifyReply) {
 
     const {email, password} = bodySchema.parse(req.body)
 
-    const authService = makeAuthService()
+    const authService = makeAuthServiceFactory()
     const {accessToken, refreshToken} = await authService.exec({
         email,
         password

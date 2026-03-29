@@ -1,4 +1,5 @@
-import { ClinicMember, ClinicRole, MemberStatus, Prisma } from "@prisma/client";
+import { ClinicMember, ClinicRole, MemberStatus } from "@prisma/client";
+import { PrismaClientOrTx } from "../../../types/prisma.type";
 
 export interface ICreateClinicMember {
   clinicId: string;
@@ -9,5 +10,5 @@ export interface ICreateClinicMember {
 
 
 export interface IClinicMemberRepository {
-  create(tx: Prisma.TransactionClient, {clinicId, userId, role, status}: ICreateClinicMember): Promise<ClinicMember>
+  create(client: PrismaClientOrTx, {clinicId, userId, role, status}: ICreateClinicMember): Promise<ClinicMember>
 }

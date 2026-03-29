@@ -10,7 +10,7 @@ interface IPlanServiceRequest {
     maxMonthlySchedules?: number;
 }
 
-export class PlanService {
+export class RegisterPlanService {
     constructor(private readonly planRepository: IPlanRepository) {}
     async exec({name, code, priceMonthly, maxUsers, maxWhatsappSessions, maxMonthlySchedules}: IPlanServiceRequest): Promise<void>{
         const doesThePlanNameExists = await this.planRepository.findByName(name)

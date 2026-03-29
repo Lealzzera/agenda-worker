@@ -45,7 +45,9 @@ export function buildServer() {
     })
   })
 
-  app.register(routes)
+  app.register(routes, {
+    prefix: '/api/v1',
+  })
 
   return app
 }
