@@ -1,4 +1,4 @@
-import { ConflictError } from "../../errors/conflict.error";
+import { ConflictError } from "@/errors/conflict.error";
 import { IPlanRepository } from "./repositories/plan-repository.interface";
 
 interface IPlanServiceRequest {

@@ -1,7 +1,7 @@
 import { compare } from "bcrypt";
-import { IUserRepository } from "../user/repositories/user-repository.interface";
-import { signAccessToken, signRefreshToken } from "../../lib/jwt";
-import { UnauthorizedError } from "../../errors/unauthorized.error";
+import { IUserRepository } from "@/modules/user/repositories/user-repository.interface";
+import { signAccessToken, signRefreshToken } from "@/lib/jwt";
+import { UnauthorizedError } from "@/errors/unauthorized.error";
 
 interface AuthServiceRequest {
     email: string;

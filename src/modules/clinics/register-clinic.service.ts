@@ -1,10 +1,10 @@
-import { IClinicMemberRepository } from "../clinic-member/repositories/clinic-member-repository.interface";
-import { IUserRepository } from "../user/repositories/user-repository.interface";
-import { IClinicRepository } from "./repositories/clinic-repository.interface";
-import { ISubscriptionRepository } from "../subscription/repositories/subscription-repository.interface";
-import { prisma } from "../../db/prisma";
+import { IClinicMemberRepository } from "@/modules/clinic-member/repositories/clinic-member-repository.interface";
+import { IUserRepository } from "@/modules/user/repositories/user-repository.interface";
+import { IClinicRepository } from "@/modules/clinics/repositories/clinic-repository.interface";
+import { ISubscriptionRepository } from "@/modules/subscription/repositories/subscription-repository.interface";
+import { prisma } from "@/db/prisma";
 import { ClinicRole, MemberStatus, SubscriptionStatus } from "@prisma/client";
-import { ConflictError } from "../../errors/conflict.error";
+import { ConflictError } from "@/errors/conflict.error";
 import { hash } from "bcrypt";
 import { randomUUID } from "crypto";
 

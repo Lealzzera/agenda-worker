@@ -1,6 +1,6 @@
 import { Plan } from "@prisma/client";
 import { ICreatePlan, IPlanRepository } from "./plan-repository.interface";
-import { prisma } from "../../../db/prisma";
+import { prisma } from "@/db/prisma";
 
 export class PlanRepository implements IPlanRepository {
     async create({ name, code, priceMonthly, maxUsers, maxWhatsappSessions, maxMonthlySchedules }: ICreatePlan): Promise<Plan> {

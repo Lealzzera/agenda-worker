@@ -1,5 +1,5 @@
 import { Clinic } from "@prisma/client";
-import { PrismaClientOrTx } from "../../../types/prisma.type";
+import { PrismaClientOrTx } from "@/types/prisma.type";
 
 export interface ICreateClinic {
   name: string;

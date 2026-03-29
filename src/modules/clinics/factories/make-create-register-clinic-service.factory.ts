@@ -1,8 +1,8 @@
-import { ClinicMemberRepository } from "../../clinic-member/repositories/clinic-member-repository";
-import { SubscriptionRepository } from "../../subscription/repositories/subscription-repository";
-import { UserRepository } from "../../user/repositories/user-respository";
-import { RegisterClinicService } from "../register-clinic.service";
-import { ClinicRepository } from "../repositories/clinic-repository";
+import { ClinicMemberRepository } from "@/modules/clinic-member/repositories/clinic-member-repository";
+import { SubscriptionRepository } from "@/modules/subscription/repositories/subscription-repository";
+import { UserRepository } from "@/modules/user/repositories/user-respository";
+import { RegisterClinicService } from "@/modules/clinics/register-clinic.service";
+import { ClinicRepository } from "@/modules/clinics/repositories/clinic-repository";
 
 export function makeCreateRegisterClinicServiceFactory() {
     const clinicRepository = new ClinicRepository()

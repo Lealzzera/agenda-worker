@@ -5,6 +5,10 @@
     "moduleResolution": "NodeNext",
     "outDir": "dist",
     "rootDir": "src",
+    "baseUrl": "src",
+    "paths": {
+      "@/*": ["*"]
+    },
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,

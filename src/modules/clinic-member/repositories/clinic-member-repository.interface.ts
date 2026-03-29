@@ -1,5 +1,5 @@
 import { ClinicMember, ClinicRole, MemberStatus } from "@prisma/client";
-import { PrismaClientOrTx } from "../../../types/prisma.type";
+import { PrismaClientOrTx } from "@/types/prisma.type";
 
 export interface ICreateClinicMember {
   clinicId: string;

@@ -1,6 +1,6 @@
 import { FastifyInstance } from "fastify";
-import { verifyJwt } from "../../middlewares/verify-jwt";
-import { verifyAdmin } from "../../middlewares/verify-admin";
+import { verifyJwt } from "@/middlewares/verify-jwt";
+import { verifyAdmin } from "@/middlewares/verify-admin";
 import { createPlanController } from "./plan.controller";
 
 export async function planRoutes(app: FastifyInstance) {

@@ -1,6 +1,6 @@
 import { Subscription } from "@prisma/client";
 import { ICreateSubscription, ISubscriptionRepository } from "./subscription-repository.interface";
-import { PrismaClientOrTx } from "../../../types/prisma.type";
+import { PrismaClientOrTx } from "@/types/prisma.type";
 
 export class SubscriptionRepository implements ISubscriptionRepository {
     async create(client: PrismaClientOrTx, { clinicId, planId, status, trialEndsAt, currentPeriodStart, currentPeriodEnd }: ICreateSubscription): Promise<Subscription> {

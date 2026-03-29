@@ -1,6 +1,6 @@
 import { ClinicMember } from "@prisma/client";
 import { IClinicMemberRepository, ICreateClinicMember } from "./clinic-member-repository.interface";
-import { PrismaClientOrTx } from "../../../types/prisma.type";
+import { PrismaClientOrTx } from "@/types/prisma.type";
 
 export class ClinicMemberRepository implements IClinicMemberRepository {
     async create(client: PrismaClientOrTx, { clinicId, userId, role, status }: ICreateClinicMember): Promise<ClinicMember> {
