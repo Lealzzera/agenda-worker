@@ -1,0 +1,155 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id String @id @default(uuid())
+  full_name String
+  email String @unique
+  password_hash String
+  status UserStatus @default(ACTIVE)
+  picture_url String?
+  role GlobalRole @default(USER)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  clinic_members ClinicMember[]
+
+  @@index([status])
+  @@map("users")
+}
+
+model Clinic {
+  id String @id @default(uuid())
+  name String
+  slug String @unique
+
+  cnpj String?
+  phone String?
+  email String?
+  address String?
+  postal_code String?
+  city String?
+  state String?
+
+  status ClinicStatus @default(ACTIVE)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  members ClinicMember[]
+  subscriptions Subscription[]
+
+  @@index([status])
+  @@map("clinics")
+}
+
+model ClinicMember {
+  id String @id @default(uuid())
+
+  clinic_id String
+  clinic Clinic @relation(fields: [clinic_id], references: [id])
+
+  user_id String
+  user User @relation(fields: [user_id], references: [id])
+
+  role ClinicRole @default(MEMBER)
+  status MemberStatus @default(ACTIVE)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@unique([clinic_id, user_id])
+
+  @@index([user_id])
+  @@index([clinic_id])
+
+  @@map("clinic_members")
+}
+
+model Plan {
+  id String @id @default(uuid())
+  name String 
+  code String @unique
+
+  price_monthly Int
+
+  trial_days Int @default(7)
+
+  max_users Int?
+  max_whatsapp_sessions Int?
+  max_monthly_schedules Int? @default(50)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id String @id @default(uuid())
+
+  clinic_id String
+  clinic Clinic @relation(fields: [clinic_id], references: [id])
+
+  plan_id String
+  plan Plan @relation(fields: [plan_id], references: [id])
+
+  status SubscriptionStatus 
+
+  trial_ends_at DateTime?
+  current_period_start DateTime?
+  current_period_end DateTime?
+
+  cancel_at_period_end Boolean @default(false)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([clinic_id])
+  @@index([clinic_id, status])
+  @@index([plan_id])
+
+  @@map("subscriptions")
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum ClinicStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum ClinicRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum MemberStatus {
+  ACTIVE
+  INVITED
+  REMOVED
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  PAST_DUE
+  ACTIVE
+  CANCELED
+}
+
+enum GlobalRole {
+  ADMIN
+  USER
+}
