@@ -48,7 +48,7 @@ export class RegisterClinicService {
         planId,
         
     }: IRegisterClinicRequest): Promise<void> {
-        const doesTheUserExist = await this.userRepository.findByEmail(userEmail)
+        const doesTheUserExist = await this.userRepository.findByEmail(prisma, userEmail)
         if (doesTheUserExist) {
             throw new ConflictError('Email provided already exists.')
         }

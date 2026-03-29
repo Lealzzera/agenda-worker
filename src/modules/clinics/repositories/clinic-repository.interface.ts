@@ -15,4 +15,5 @@ export interface ICreateClinic {
 
 export interface IClinicRepository {
   create(client: PrismaClientOrTx, {name, slug, cnpj, phone, email, address, postalCode, city, state}: ICreateClinic): Promise<Clinic>
+  findById(client: PrismaClientOrTx, id: string): Promise<Clinic | null>
 }

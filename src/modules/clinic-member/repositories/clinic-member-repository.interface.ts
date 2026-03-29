@@ -11,4 +11,5 @@ export interface ICreateClinicMember {
 
 export interface IClinicMemberRepository {
   create(client: PrismaClientOrTx, {clinicId, userId, role, status}: ICreateClinicMember): Promise<ClinicMember>
+  findUserByClinicAndUserId(client: PrismaClientOrTx, clinicId: string, userId: string): Promise<ClinicMember | null>
 }

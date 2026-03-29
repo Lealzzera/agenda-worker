@@ -15,4 +15,14 @@ export class ClinicMemberRepository implements IClinicMemberRepository {
         return data
     }
 
+    async findUserByClinicAndUserId(client: PrismaClientOrTx, clinicId: string, userId: string): Promise<ClinicMember | null> {
+        const data = await client.clinicMember.findFirst({
+            where: {
+                clinic_id: clinicId,
+                user_id: userId
+            }
+        })
+        return data
+    }
+
 }

@@ -20,4 +20,12 @@ export class ClinicRepository implements IClinicRepository {
         return data
     }
 
+    async findById(client: PrismaClientOrTx, id: string): Promise<Clinic | null> {
+        const data = await client.clinic.findUnique({
+            where: {
+                id
+            }
+        })
+        return data
+    }
 }

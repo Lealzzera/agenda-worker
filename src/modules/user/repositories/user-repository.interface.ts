@@ -10,5 +10,5 @@ export interface ICreateUser {
 
 export interface IUserRepository {
     create(client: PrismaClientOrTx, {full_name, email, password_hash, picture_url}: ICreateUser): Promise<User>
-    findByEmail(email: string): Promise<User | null>
+    findByEmail(client: PrismaClientOrTx, email: string): Promise<User | null>
 }
