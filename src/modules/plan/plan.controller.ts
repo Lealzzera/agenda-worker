@@ -10,10 +10,10 @@ export async function createPlanController(req: FastifyRequest, res: FastifyRepl
         priceMonthly: z.number().int(),
         maxUsers: z.number().int(),
         maxWhatsappSessions: z.number().int(),
-        maxMonthlySchedules: z.number().int()
+        maxMonthlyAppointments: z.number().int()
     })
 
-    const { name, code, priceMonthly, maxUsers, maxWhatsappSessions, maxMonthlySchedules } = createPlanBodySchema.parse(req.body)
+    const { name, code, priceMonthly, maxUsers, maxWhatsappSessions, maxMonthlyAppointments } = createPlanBodySchema.parse(req.body)
 
     const planService = makeCreateRegisterPlanServiceFactory()
     await planService.exec({
@@ -22,7 +22,7 @@ export async function createPlanController(req: FastifyRequest, res: FastifyRepl
             priceMonthly,
             maxUsers,
             maxWhatsappSessions,
-            maxMonthlySchedules
+            maxMonthlyAppointments
     })
 
     return res.status(201).send({message: "Plan created successfully"})

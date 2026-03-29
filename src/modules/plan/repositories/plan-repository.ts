@@ -3,7 +3,7 @@ import { ICreatePlan, IPlanRepository } from "./plan-repository.interface";
 import { PrismaClientOrTx } from "@/types/prisma.type";
 
 export class PlanRepository implements IPlanRepository {
-    async create(client: PrismaClientOrTx, { name, code, priceMonthly, maxUsers, maxWhatsappSessions, maxMonthlySchedules }: ICreatePlan): Promise<Plan> {
+    async create(client: PrismaClientOrTx, { name, code, priceMonthly, maxUsers, maxWhatsappSessions, maxMonthlyAppointments }: ICreatePlan): Promise<Plan> {
         const data = await client.plan.create({
             data: {
                 name,
@@ -11,7 +11,7 @@ export class PlanRepository implements IPlanRepository {
                 price_monthly: priceMonthly,
                 max_users: maxUsers,
                 max_whatsapp_sessions: maxWhatsappSessions,
-                max_monthly_schedules: maxMonthlySchedules
+                max_monthly_appointments: maxMonthlyAppointments
             }
         })
         return data

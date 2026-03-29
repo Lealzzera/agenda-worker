@@ -83,7 +83,7 @@ model Plan {
 
   max_users Int?
   max_whatsapp_sessions Int?
-  max_monthly_schedules Int? @default(50)
+  max_monthly_appointments Int? @default(50)
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
