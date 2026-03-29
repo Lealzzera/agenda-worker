@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import makeRegisterUserServiceFactory from "./make-regiser-user-service-factory";
+import makeRegisterUserServiceFactory from "./factories/make-regiser-user-service-factory";
 
 export async function registerUserController(req: FastifyRequest, res: FastifyReply) {
     const registerUserBodySchema = z.object({
