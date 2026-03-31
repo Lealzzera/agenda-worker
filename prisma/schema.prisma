@@ -14,10 +14,8 @@ model User {
   status UserStatus @default(ACTIVE)
   picture_url String?
   role GlobalRole @default(USER)
-
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
-
   clinic_members ClinicMember[]
 
   @@index([status])
@@ -28,7 +26,7 @@ model Clinic {
   id String @id @default(uuid())
   name String
   slug String @unique
-
+  type ClinicType @default(OTHER)
   cnpj String?
   phone String?
   email String?
@@ -36,39 +34,111 @@ model Clinic {
   postal_code String?
   city String?
   state String?
-
   status ClinicStatus @default(ACTIVE)
-
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
-
   members ClinicMember[]
   subscriptions Subscription[]
+  clinic_settings ClinicSettings?
+  working_hours ClinicWorkingHour[]
+  special_dates ClinicSpecialDate[]
+  services ClinicService[]
+  appointments Appointments[]
 
   @@index([status])
   @@map("clinics")
 }
 
+model ClinicSettings {
+  id String @id @default(uuid())
+  clinic_id String @unique
+  clinic Clinic @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
+  charges_evaluation Boolean @default(false)
+  evaluation_price_cents Int?
+  max_appointments_per_slot Int? @default(1)
+  appointment_duration_minutes Int? @default(60)
+  allow_rescheduling Boolean @default(true)
+  allow_cancellation Boolean @default(true)
+  timezone String @default("America/Sao_Paulo")
+  ai_agent_name String @default("Aurora")
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("clinic_settings")
+}
+
+model Appointments {
+  id String @id @default(uuid())
+  clinic_id String
+  clinic Clinic @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
+  service_id String?
+  service ClinicService? @relation(fields: [service_id], references: [id], onDelete: SetNull)
+  customer_phone_number String
+  appointment_date DateTime
+  status AppointmentStatus @default(PENDING)
+  notes String?
+
+  @@map("appointments")
+}
+
+model ClinicWorkingHour {
+  id String @id @default(uuid())
+  clinic_id String
+  clinic Clinic @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
+  weekday Weekday
+  start_time String
+  end_time String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([clinic_id, weekday])
+  @@map("clinic_working_hours")
+}
+
+model ClinicSpecialDate {
+  id String @id @default(uuid())
+  clinic_id String
+  clinic Clinic @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
+  date String
+  is_open Boolean
+  start_time String?
+  end_time String?
+  note String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@unique([clinic_id, date])
+  @@index([clinic_id, date])
+  @@map("clinic_special_dates")
+}
+
+model ClinicService {
+  id String @id @default(uuid())
+  clinic_id String
+  clinic Clinic @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
+  name String
+  appointments Appointments[]
+  duration_minutes Int
+  price_cents Int?
+  created_at DateTime @default(now())
+
+  @@map("clinic_services")
+}
+
 model ClinicMember {
   id String @id @default(uuid())
-
   clinic_id String
   clinic Clinic @relation(fields: [clinic_id], references: [id])
-
   user_id String
   user User @relation(fields: [user_id], references: [id])
-
   role ClinicRole @default(MEMBER)
   status MemberStatus @default(ACTIVE)
-
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
   @@unique([clinic_id, user_id])
-
   @@index([user_id])
   @@index([clinic_id])
-
   @@map("clinic_members")
 }
 
@@ -76,18 +146,13 @@ model Plan {
   id String @id @default(uuid())
   name String 
   code String @unique
-
   price_monthly Int
-
   trial_days Int @default(7)
-
   max_users Int?
   max_whatsapp_sessions Int?
   max_monthly_appointments Int? @default(50)
-
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
-
   subscriptions Subscription[]
 
   @@map("plans")
@@ -95,28 +160,21 @@ model Plan {
 
 model Subscription {
   id String @id @default(uuid())
-
   clinic_id String
   clinic Clinic @relation(fields: [clinic_id], references: [id])
-
   plan_id String
   plan Plan @relation(fields: [plan_id], references: [id])
-
   status SubscriptionStatus 
-
   trial_ends_at DateTime?
   current_period_start DateTime?
   current_period_end DateTime?
-
   cancel_at_period_end Boolean @default(false)
-
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
   @@index([clinic_id])
   @@index([clinic_id, status])
   @@index([plan_id])
-
   @@map("subscriptions")
 }
 
@@ -152,4 +210,29 @@ enum SubscriptionStatus {
 enum GlobalRole {
   ADMIN
   USER
+}
+
+enum ClinicType {
+  DENTAL
+  MEDICAL
+  AESTHETIC
+  PSYCHOLOGY
+  OTHER
+}
+
+enum Weekday {
+  SUNDAY
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELED
+  COMPLETED
 }
