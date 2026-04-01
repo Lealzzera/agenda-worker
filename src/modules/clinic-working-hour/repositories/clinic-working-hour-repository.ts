@@ -1,5 +1,5 @@
 import { PrismaClientOrTx } from "@/types/prisma.type";
-import { IClinicWorkingHourRepository, ICreateWorkingHour } from "./clinic-working-hour.interface";
+import { IClinicWorkingHourRepository, ICreateWorkingHour } from "./clinic-working-hour-repository.interface";
 import { ClinicWorkingHour } from "@prisma/client";
 
 export class ClinicWorkingHourRepository implements IClinicWorkingHourRepository {
