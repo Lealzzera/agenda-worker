@@ -2,18 +2,53 @@ import { IClinicMemberRepository } from "@/modules/clinic-member/repositories/cl
 import { IUserRepository } from "@/modules/user/repositories/user-repository.interface";
 import { IClinicRepository } from "@/modules/clinics/repositories/clinic-repository.interface";
 import { ISubscriptionRepository } from "@/modules/subscription/repositories/subscription-repository.interface";
+import { IClinicSettingsRepository } from "@/modules/clinic-settings/repositories/clinic-settings-repository.interface";
+import { IClinicWorkingHourRepository } from "@/modules/clinic-working-hour/repositories/clinic-working-hour-repository.interface";
+import { IClinicServiceRepository } from "@/modules/clinic-service/repositories/clinic-service-repository.interface";
 import { prisma } from "@/db/prisma";
-import { ClinicRole, MemberStatus, SubscriptionStatus } from "@prisma/client";
+import { ClinicRole, ClinicType, MemberStatus, SubscriptionStatus, Weekday } from "@prisma/client";
 import { ConflictError } from "@/errors/conflict.error";
 import { hash } from "bcrypt";
 import { randomUUID } from "crypto";
 
+interface IWorkingHourInput {
+    weekday: Weekday;
+    startTime: string;
+    endTime: string;
+}
+
+interface IServiceInput {
+    name: string;
+    durationMinutes: number;
+    priceCents?: number;
+}
+
+interface ISpecialDateInput {
+    date: string;
+    isOpen: boolean;
+    startTime?: string;
+    endTime?: string;
+    note?: string;
+}
+
+interface ISettingsInput {
+    chargesEvaluation?: boolean;
+    evaluationPriceCents?: number;
+    maxAppointmentsPerSlot?: number;
+    appointmentDurationMinutes?: number;
+    allowRescheduling?: boolean;
+    allowCancellation?: boolean;
+    timezone?: string;
+    aiAgentName?: string;
+}
+
 interface IRegisterClinicRequest {
-    userFullName: string,
-    userEmail: string,
-    password: string,
-    userPictureUrl?: string,
+    userFullName: string;
+    userEmail: string;
+    password: string;
+    userPictureUrl?: string;
     clinicName: string;
+    clinicType?: ClinicType;
     cnpj?: string;
     phone?: string;
     clinicEmail?: string;
@@ -22,22 +57,30 @@ interface IRegisterClinicRequest {
     city?: string;
     state?: string;
     planId: string;
+    workingHours?: IWorkingHourInput[];
+    services?: IServiceInput[];
+    specialDates?: ISpecialDateInput[];
+    settings?: ISettingsInput;
 }
 
 export class RegisterClinicService {
     constructor(
-        private readonly clinicRepository: IClinicRepository, 
-        private readonly userRepository: IUserRepository, 
+        private readonly clinicRepository: IClinicRepository,
+        private readonly userRepository: IUserRepository,
         private readonly clinicMemberRepository: IClinicMemberRepository,
-        private readonly subscriptionRepository: ISubscriptionRepository
+        private readonly subscriptionRepository: ISubscriptionRepository,
+        private readonly clinicSettingsRepository: IClinicSettingsRepository,
+        private readonly clinicWorkingHourRepository: IClinicWorkingHourRepository,
+        private readonly clinicServiceRepository: IClinicServiceRepository,
     ) {}
-    
+
     async exec({
         userFullName,
         userEmail,
         password,
         userPictureUrl,
         clinicName,
+        clinicType,
         cnpj,
         phone,
         clinicEmail,
@@ -46,30 +89,34 @@ export class RegisterClinicService {
         city,
         state,
         planId,
-        
+        workingHours,
+        services,
+        specialDates,
+        settings,
     }: IRegisterClinicRequest): Promise<void> {
-        const doesTheUserExist = await this.userRepository.findByEmail(prisma, userEmail)
+        const doesTheUserExist = await this.userRepository.findByEmail(prisma, userEmail);
         if (doesTheUserExist) {
-            throw new ConflictError('Email provided already exists.')
+            throw new ConflictError('Email provided already exists.');
         }
 
         const baseClinicSlug = clinicName.toLowerCase().replace(/[^a-z0-9-]/g, '-');
-        const clinicSlug = baseClinicSlug.concat('-' + randomUUID().slice(0, 6))
+        const clinicSlug = baseClinicSlug.concat('-' + randomUUID().slice(0, 6));
         const passwordHash = await hash(password, 6);
-        const trialEndsDate = new Date().setDate(new Date().getDate() + 14)
+        const trialEndsDate = new Date().setDate(new Date().getDate() + 14);
 
         await prisma.$transaction(async (tx) => {
             const user = await this.userRepository.create(tx, {
                 full_name: userFullName,
                 email: userEmail,
                 password_hash: passwordHash,
-                picture_url: userPictureUrl
+                picture_url: userPictureUrl,
             });
             const clinic = await this.clinicRepository.create(tx, {
                 name: clinicName,
                 slug: clinicSlug,
-                address: address,
-                postalCode: postalCode,
+                type: clinicType,
+                address,
+                postalCode,
                 city,
                 cnpj,
                 email: clinicEmail,
@@ -80,14 +127,43 @@ export class RegisterClinicService {
                 clinicId: clinic.id,
                 userId: user.id,
                 role: ClinicRole.OWNER,
-                status: MemberStatus.ACTIVE
+                status: MemberStatus.ACTIVE,
             });
             await this.subscriptionRepository.create(tx, {
                 clinicId: clinic.id,
-                planId: planId,
+                planId,
                 status: SubscriptionStatus.TRIALING,
                 trialEndsAt: new Date(trialEndsDate),
             });
+            if (settings) {
+                await this.clinicSettingsRepository.create(tx, {
+                    clinicId: clinic.id,
+                    chargesEvaluation: settings.chargesEvaluation ?? false,
+                    evaluationPriceCents: settings.chargesEvaluation ? settings.evaluationPriceCents : 0,
+                    maxAppointmentsPerSlot: settings.maxAppointmentsPerSlot,
+                    appointmentDurationMinutes: settings.appointmentDurationMinutes,
+                    allowRescheduling: settings.allowRescheduling,
+                    allowCancellation: settings.allowCancellation,
+                    timezone: settings.timezone,
+                    aiAgentName: settings.aiAgentName,
+                });
+            }
+
+            if (workingHours?.length) {
+                await this.clinicWorkingHourRepository.createMany(
+                    tx,
+                    clinic.id,
+                    workingHours
+                );
+            }
+
+            if (services?.length) {
+                await this.clinicServiceRepository.createMany(
+                    tx,
+                    clinic.id,
+                    services
+                );
+            }
         });
     }
 }

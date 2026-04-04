@@ -3,7 +3,7 @@ import { IClinicRepository, ICreateClinic } from "./clinic-repository.interface"
 import { PrismaClientOrTx } from "@/types/prisma.type";
 
 export class ClinicRepository implements IClinicRepository {
-    async create(client: PrismaClientOrTx, { name, cnpj, phone, slug, address, city, email, postalCode, state  }: ICreateClinic): Promise<Clinic> {
+    async create(client: PrismaClientOrTx, { name, cnpj, phone, slug, address, city, email, postalCode, state, type }: ICreateClinic): Promise<Clinic> {
         const data = await client.clinic.create({
             data: {
                 name,
@@ -15,6 +15,7 @@ export class ClinicRepository implements IClinicRepository {
                 email,
                 postal_code: postalCode,
                 state,
+                type,
             }
         })
         return data

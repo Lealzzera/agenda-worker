@@ -2,6 +2,7 @@ import { compare } from "bcrypt";
 import { IUserRepository } from "@/modules/user/repositories/user-repository.interface";
 import { signAccessToken, signRefreshToken } from "@/lib/jwt";
 import { UnauthorizedError } from "@/errors/unauthorized.error";
+import { prisma } from "@/db/prisma";
 
 interface AuthServiceRequest {
     email: string;
@@ -16,7 +17,7 @@ interface AuthServiceResponse {
 export class AuthService {
     constructor(private readonly userRepository: IUserRepository) {}
     async exec({email, password}: AuthServiceRequest): Promise<AuthServiceResponse> {
-        const doesUserExist = await this.userRepository.findByEmail(email)
+        const doesUserExist = await this.userRepository.findByEmail(prisma, email)
         
         if(!doesUserExist) {
             throw new UnauthorizedError('Invalid user credentials')
