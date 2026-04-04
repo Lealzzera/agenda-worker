@@ -23,15 +23,7 @@ interface IServiceInput {
     priceCents?: number;
 }
 
-interface ISpecialDateInput {
-    date: string;
-    isOpen: boolean;
-    startTime?: string;
-    endTime?: string;
-    note?: string;
-}
-
-interface ISettingsInput {
+interface ISettingsInput {  
     chargesEvaluation?: boolean;
     evaluationPriceCents?: number;
     maxAppointmentsPerSlot?: number;
@@ -59,7 +51,6 @@ interface IRegisterClinicRequest {
     planId: string;
     workingHours?: IWorkingHourInput[];
     services?: IServiceInput[];
-    specialDates?: ISpecialDateInput[];
     settings?: ISettingsInput;
 }
 
@@ -91,7 +82,6 @@ export class RegisterClinicService {
         planId,
         workingHours,
         services,
-        specialDates,
         settings,
     }: IRegisterClinicRequest): Promise<void> {
         const doesTheUserExist = await this.userRepository.findByEmail(prisma, userEmail);
