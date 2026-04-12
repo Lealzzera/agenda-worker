@@ -11,6 +11,8 @@ const envSchema = z.object( {
     DATABASE_PASSWORD: z.string(),
     DATABASE_NAME: z.string(),
     DATABASE_PORT: z.coerce.number().default(5432),
+    WAHA_URL: z.url(),
+    WAHA_API_KEY: z.string().optional(),
 })
 
 const parsed = envSchema.safeParse(process.env)

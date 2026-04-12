@@ -76,7 +76,6 @@ export async function registerClinicController(req: FastifyRequest, res: Fastify
         clinicType,
         workingHours,
         services,
-        specialDates,
         settings,
     } = data;
 
@@ -107,7 +106,6 @@ export async function registerClinicController(req: FastifyRequest, res: Fastify
         planId,
         workingHours,
         services,
-        specialDates,
         settings,
     });
 
