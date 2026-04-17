@@ -1,8 +1,8 @@
 import { PlanRepository } from "@/modules/plan/repositories/plan-repository";
-import { RegisterPlanService } from "@/modules/plan/register-plan.service";
+import { RegisterPlanService } from "@/modules/plan/use-cases/register-plan.service";
 
 export default function makeCreateRegisterPlanServiceFactory() {
-    const planRepository = new PlanRepository()
-    const createPlanService = new RegisterPlanService(planRepository)
-    return createPlanService
+  const planRepository = new PlanRepository();
+  const createPlanService = new RegisterPlanService(planRepository);
+  return createPlanService;
 }

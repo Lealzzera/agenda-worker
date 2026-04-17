@@ -144,7 +144,8 @@ model ClinicMember {
 
 model Plan {
   id String @id @default(uuid())
-  name String 
+  name String
+  description String?
   code String @unique
   price_monthly Int
   trial_days Int @default(7)
@@ -164,7 +165,7 @@ model Subscription {
   clinic Clinic @relation(fields: [clinic_id], references: [id])
   plan_id String
   plan Plan @relation(fields: [plan_id], references: [id])
-  status SubscriptionStatus 
+  status SubscriptionStatus
   trial_ends_at DateTime?
   current_period_start DateTime?
   current_period_end DateTime?
