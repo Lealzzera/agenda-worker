@@ -144,6 +144,7 @@ model ClinicMember {
 
 model Plan {
   id String @id @default(uuid())
+  stripe_price_id String? @unique
   name String
   description String?
   code String @unique

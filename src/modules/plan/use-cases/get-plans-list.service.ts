@@ -13,6 +13,7 @@ type GetPlansListServiceResponse = {
     maxWhatsappSessions: number | null;
     maxMonthlyAppointments: number | null;
     createdAt: Date;
+    stripePriceId: string | null;
     updatedAt: Date;
   }[];
 };
@@ -33,6 +34,7 @@ export class GetPlansListService {
       maxMonthlyAppointments: plan.max_monthly_appointments,
       trialDays: plan.trial_days,
       createdAt: plan.created_at,
+      stripePriceId: plan.stripe_price_id,
       updatedAt: plan.updated_at,
     }));
 
