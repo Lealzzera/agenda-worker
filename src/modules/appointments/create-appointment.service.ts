@@ -119,7 +119,6 @@ export class CreateAppointmentService {
           notes,
         });
       } catch (err) {
-        // N\u00e3o queremos quebrar a cria\u00e7\u00e3o do agendamento se o WhatsApp falhar.
         console.error("Failed to send WhatsApp notification:", err);
       }
     }
