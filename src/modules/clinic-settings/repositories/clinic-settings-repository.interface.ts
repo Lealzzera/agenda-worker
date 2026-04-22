@@ -15,4 +15,5 @@ export interface CreateClinicSettings {
 
 export interface IClinicSettingsRepository {
     create(client: PrismaClientOrTx, { clinicId, chargesEvaluation, evaluationPriceCents, maxAppointmentsPerSlot, appointmentDurationMinutes, allowRescheduling, allowCancellation, timezone, aiAgentName }: CreateClinicSettings): Promise<ClinicSettings>
+    findByClinicId(client: PrismaClientOrTx, clinicId: string): Promise<ClinicSettings | null>
 }

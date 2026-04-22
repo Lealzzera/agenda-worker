@@ -15,6 +15,8 @@ const envSchema = z.object({
   DATABASE_PORT: z.coerce.number().default(5432),
   WAHA_URL: z.url(),
   WAHA_API_KEY: z.string().optional(),
+  WAHA_WEBHOOK_URL: z.url().optional(),
+  WAHA_EDITION: z.enum(["core", "plus"]).default("plus"),
   STRIPE_SECRET_KEY: z.string(),
 });
 

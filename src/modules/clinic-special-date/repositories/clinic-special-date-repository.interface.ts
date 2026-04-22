@@ -13,4 +13,5 @@ export interface ICreateClinicSpecialDate {
 export interface IClinicSpecialDateRepository {
     create(client: PrismaClientOrTx, { clinicId, date, isOpen, startTime, endTime, note }: ICreateClinicSpecialDate): Promise<ClinicSpecialDate>
     createMany(client: PrismaClientOrTx, clinicId: string, data: Omit<ICreateClinicSpecialDate, 'clinicId'>[]): Promise<void>
+    findByClinicIdAndDate(client: PrismaClientOrTx, clinicId: string, date: string): Promise<ClinicSpecialDate | null>
 }

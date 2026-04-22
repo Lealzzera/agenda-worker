@@ -1,6 +1,6 @@
 import { PrismaClientOrTx } from "@/types/prisma.type";
 import { IClinicWorkingHourRepository, ICreateWorkingHour } from "./clinic-working-hour-repository.interface";
-import { ClinicWorkingHour } from "@prisma/client";
+import { ClinicWorkingHour, Weekday } from "@prisma/client";
 
 export class ClinicWorkingHourRepository implements IClinicWorkingHourRepository {
     async create(client: PrismaClientOrTx, { clinicId, endTime, startTime, weekday }: ICreateWorkingHour): Promise<ClinicWorkingHour> {
@@ -24,5 +24,15 @@ export class ClinicWorkingHourRepository implements IClinicWorkingHourRepository
                 end_time: endTime,
             }))
         })
+    }
+
+    async findByClinicIdAndWeekday(client: PrismaClientOrTx, clinicId: string, weekday: Weekday): Promise<ClinicWorkingHour[]> {
+        const workingHours = await client.clinicWorkingHour.findMany({
+            where: {
+                clinic_id: clinicId,
+                weekday,
+            }
+        })
+        return workingHours
     }
 }

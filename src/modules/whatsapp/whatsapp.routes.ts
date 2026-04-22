@@ -1,23 +1,46 @@
+import { verifyJwt } from "@/middlewares/verify-jwt";
 import { FastifyInstance } from "fastify";
 import {
-    startSessionController,
-    stopSessionController,
-    sendMessageController,
-    getQrCodeController,
-    getSessionsController,
-    wahaWebhookController,
+  disconnectClinicSessionController,
+  getClinicQrController,
+  getClinicStatusController,
+  startClinicSessionController,
+  stopClinicSessionController,
+  wahaWebhookController,
 } from "./whatsapp.controller";
 
 export async function whatsappRoutes(app: FastifyInstance) {
-    app.post("/sessions", async (req, res) => startSessionController(req, res));
-    app.delete("/sessions/:session", async (req, res) => stopSessionController(req, res));
-    app.get("/sessions", async (_req, res) => getSessionsController(_req, res));
-    app.post("/send", async (req, res) => sendMessageController(req, res));
-    app.get("/qr/:session", async (req, res) => getQrCodeController(req, res));
+  app.post(
+    "/webhook",
+    {
+      config: {
+        rateLimit: { max: 100, timeWindow: "1 minute" },
+      },
+    },
+    async (req, res) => wahaWebhookController(req, res),
+  );
 
-    app.post("/webhook", {
-        config: {
-            rateLimit: { max: 100, timeWindow: "1 minute" },
-        },
-    }, async (req, res) => wahaWebhookController(req, res));
+  app.register(async function (protectedRoutes) {
+    protectedRoutes.addHook("preHandler", verifyJwt);
+
+    protectedRoutes.post("/clinics/:clinicId/session", async (req, res) =>
+      startClinicSessionController(req, res),
+    );
+
+    protectedRoutes.post("/clinics/:clinicId/session/stop", async (req, res) =>
+      stopClinicSessionController(req, res),
+    );
+
+    protectedRoutes.delete("/clinics/:clinicId/session", async (req, res) =>
+      disconnectClinicSessionController(req, res),
+    );
+
+    protectedRoutes.get("/clinics/:clinicId/status", async (req, res) =>
+      getClinicStatusController(req, res),
+    );
+
+    protectedRoutes.get("/clinics/:clinicId/qr", async (req, res) =>
+      getClinicQrController(req, res),
+    );
+  });
 }

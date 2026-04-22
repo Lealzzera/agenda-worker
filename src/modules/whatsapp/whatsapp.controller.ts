@@ -1,76 +1,134 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import { makeWhatsAppServiceFactory } from "./factories/make-whatsapp-service.factory";
+import {
+  makeDisconnectClinicWhatsAppSessionServiceFactory,
+  makeGetClinicWhatsAppQrServiceFactory,
+  makeGetClinicWhatsAppStatusServiceFactory,
+  makeProcessWahaWebhookServiceFactory,
+  makeStartClinicWhatsAppSessionServiceFactory,
+  makeStopClinicWhatsAppSessionServiceFactory,
+} from "./factories/make-whatsapp-service.factory";
 
-const startSessionSchema = z.object({
-    name: z.string(),
-    engine: z.string().default("WEBJS"),
+const clinicIdParamsSchema = z.object({
+  clinicId: z.uuid(),
 });
 
-const sendMessageSchema = z.object({
+const startSessionBodySchema = z.object({
+  engine: z.enum(["WEBJS", "NOWEB", "GOWS"]).optional(),
+});
+
+const statusQuerySchema = z.object({
+  refresh: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((v) => v === "true"),
+});
+
+export async function startClinicSessionController(
+  req: FastifyRequest,
+  res: FastifyReply,
+) {
+  const { clinicId } = clinicIdParamsSchema.parse(req.params);
+  const { engine } = startSessionBodySchema.parse(req.body ?? {});
+
+  const service = makeStartClinicWhatsAppSessionServiceFactory();
+  const { session, alreadyConnected } = await service.exec({
+    clinicId,
+    engine,
+  });
+
+  return res.status(alreadyConnected ? 200 : 201).send({
+    session: {
+      id: session.id,
+      clinicId: session.clinic_id,
+      sessionName: session.session_name,
+      status: session.status,
+      engine: session.engine,
+    },
+    alreadyConnected,
+  });
+}
+
+export async function stopClinicSessionController(
+  req: FastifyRequest,
+  res: FastifyReply,
+) {
+  const { clinicId } = clinicIdParamsSchema.parse(req.params);
+
+  const service = makeStopClinicWhatsAppSessionServiceFactory();
+  await service.exec({ clinicId });
+
+  return res.send({ message: "WhatsApp session stopped" });
+}
+
+export async function disconnectClinicSessionController(
+  req: FastifyRequest,
+  res: FastifyReply,
+) {
+  const { clinicId } = clinicIdParamsSchema.parse(req.params);
+
+  const service = makeDisconnectClinicWhatsAppSessionServiceFactory();
+  await service.exec({ clinicId });
+
+  return res.send({ message: "WhatsApp disconnected" });
+}
+
+export async function getClinicQrController(
+  req: FastifyRequest,
+  res: FastifyReply,
+) {
+  const { clinicId } = clinicIdParamsSchema.parse(req.params);
+
+  const service = makeGetClinicWhatsAppQrServiceFactory();
+  const { qr, sessionName, status, phoneNumber } = await service.exec({
+    clinicId,
+  });
+
+  return res.send({ sessionName, status, qr, phoneNumber });
+}
+
+export async function getClinicStatusController(
+  req: FastifyRequest,
+  res: FastifyReply,
+) {
+  const { clinicId } = clinicIdParamsSchema.parse(req.params);
+  const { refresh } = statusQuerySchema.parse(req.query ?? {});
+
+  const service = makeGetClinicWhatsAppStatusServiceFactory();
+  const result = await service.exec({ clinicId, refresh });
+
+  return res.send(result);
+}
+
+export async function wahaWebhookController(
+  req: FastifyRequest,
+  res: FastifyReply,
+) {
+  const webhookSchema = z.object({
+    event: z.string(),
     session: z.string(),
-    chatId: z.string(),
-    text: z.string(),
-});
+    payload: z.unknown().optional(),
+    id: z.string().optional(),
+    timestamp: z.number().optional(),
+    me: z
+      .object({
+        id: z.string().optional(),
+        pushName: z.string().optional(),
+      })
+      .optional(),
+  });
 
-export async function startSessionController(req: FastifyRequest, res: FastifyReply) {
-    const data = startSessionSchema.parse(req.body);
+  const data = webhookSchema.parse(req.body);
 
-    const whatsappService = makeWhatsAppServiceFactory();
-    await whatsappService.startSession({
-        name: data.name,
-        config: { engine: data.engine },
-    });
+  const service = makeProcessWahaWebhookServiceFactory();
+  const result = await service.exec({
+    event: data.event,
+    session: data.session,
+    payload: data.payload,
+    id: data.id,
+    timestamp: data.timestamp,
+    me: data.me,
+  });
 
-    return res.status(201).send({ message: "WhatsApp session started" });
-}
-
-export async function stopSessionController(req: FastifyRequest, res: FastifyReply) {
-    const { session } = req.params as { session: string };
-
-    const whatsappService = makeWhatsAppServiceFactory();
-    await whatsappService.stopSession(session);
-
-    return res.send({ message: "WhatsApp session stopped" });
-}
-
-export async function sendMessageController(req: FastifyRequest, res: FastifyReply) {
-    const data = sendMessageSchema.parse(req.body);
-
-    const whatsappService = makeWhatsAppServiceFactory();
-    await whatsappService.sendMessage(data);
-
-    return res.send({ message: "Message sent" });
-}
-
-export async function getQrCodeController(req: FastifyRequest, res: FastifyReply) {
-    const { session } = req.params as { session: string };
-
-    const whatsappService = makeWhatsAppServiceFactory();
-    const qrCode = await whatsappService.getQrCode(session);
-
-    return res.type("text/html").send(qrCode);
-}
-
-export async function getSessionsController(_req: FastifyRequest, res: FastifyReply) {
-    const whatsappService = makeWhatsAppServiceFactory();
-    const sessions = await whatsappService.getSessions();
-
-    return res.send({ sessions });
-}
-
-export async function wahaWebhookController(req: FastifyRequest, res: FastifyReply) {
-    const webhookSchema = z.object({
-        session: z.string(),
-        payload: z.any(),
-    });
-
-    const data = webhookSchema.parse(req.body);
-
-    // TODO: Process incoming WhatsApp message
-    // This is where you'll integrate with Aurora (AI agent)
-    // or handle appointment-related logic
-    console.log("WhatsApp webhook received:", JSON.stringify(data, null, 2));
-
-    return res.status(200).send({ received: true });
+  return res.status(200).send({ received: true, ...result });
 }

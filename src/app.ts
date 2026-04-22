@@ -1,4 +1,5 @@
 import { FastifyInstance } from "fastify";
+import { appointmentRoutes } from "./modules/appointments/appointment.routes";
 import { authRoutes } from "./modules/auth/auth.routes";
 import { clinicRoutes } from "./modules/clinics/clinic.routes";
 import { planRoutes } from "./modules/plan/plan.routes";
@@ -13,4 +14,5 @@ export default async function routes(app: FastifyInstance) {
   app.register(userRoutes, { prefix: "/user" });
   app.register(whatsappRoutes, { prefix: "/whatsapp" });
   app.register(stripeRoutes, { prefix: "/stripe" });
+  app.register(appointmentRoutes, { prefix: "/appointments" });
 }

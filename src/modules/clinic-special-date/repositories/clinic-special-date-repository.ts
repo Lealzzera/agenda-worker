@@ -29,4 +29,16 @@ export class ClinicSpecialDateRepository implements IClinicSpecialDateRepository
             }))
         })
     }
+
+    async findByClinicIdAndDate(client: PrismaClientOrTx, clinicId: string, date: string): Promise<ClinicSpecialDate | null> {
+        const specialDate = await client.clinicSpecialDate.findUnique({
+            where: {
+                clinic_id_date: {
+                    clinic_id: clinicId,
+                    date,
+                }
+            }
+        })
+        return specialDate
+    }
 }

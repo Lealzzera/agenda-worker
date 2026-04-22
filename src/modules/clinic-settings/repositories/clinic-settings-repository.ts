@@ -20,4 +20,12 @@ export class ClinicSettingsRepository implements IClinicSettingsRepository {
         return clinicSettings;
     }
 
+    async findByClinicId(client: PrismaClientOrTx, clinicId: string): Promise<ClinicSettings | null> {
+        const clinicSettings = await client.clinicSettings.findUnique({
+            where: {
+                clinic_id: clinicId,
+            }
+        })
+        return clinicSettings
+    }
 }

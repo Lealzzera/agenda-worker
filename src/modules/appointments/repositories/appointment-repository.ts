@@ -1,6 +1,6 @@
 import { PrismaClientOrTx } from "@/types/prisma.type";
 import { IAppointmentRepository, ICreateAppointment } from "./appointment-repository.interface";
-import { Appointments } from "@prisma/client";
+import { Appointments, AppointmentStatus } from "@prisma/client";
 
 export class AppointmentRepository implements IAppointmentRepository {
     async create(client: PrismaClientOrTx, { appointmentDate, clinicId, customerPhoneNumber, status, notes, serviceId }: ICreateAppointment): Promise<Appointments> {
@@ -15,5 +15,18 @@ export class AppointmentRepository implements IAppointmentRepository {
             }
         })
         return appointment
+    }
+
+    async countByClinicAndDate(client: PrismaClientOrTx, clinicId: string, appointmentDate: Date): Promise<number> {
+        const count = await client.appointments.count({
+            where: {
+                clinic_id: clinicId,
+                appointment_date: appointmentDate,
+                status: {
+                    notIn: [AppointmentStatus.CANCELED],
+                },
+            },
+        })
+        return count
     }
 }
