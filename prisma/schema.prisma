@@ -34,7 +34,7 @@ model Clinic {
   postal_code String?
   city String?
   state String?
-  status ClinicStatus @default(ACTIVE)
+  status ClinicStatus @default(AWAITING_PAYMENT)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
   members ClinicMember[]
@@ -151,8 +151,8 @@ model Plan {
   code String @unique
   price_monthly Int
   trial_days Int @default(7)
-  max_users Int?
-  max_whatsapp_sessions Int?
+  max_users Int? @default(1)
+  max_whatsapp_sessions Int? @default(1)
   max_monthly_appointments Int? @default(50)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -189,6 +189,7 @@ enum UserStatus {
 enum ClinicStatus {
   ACTIVE
   SUSPENDED
+  AWAITING_PAYMENT
 }
 
 enum ClinicRole {

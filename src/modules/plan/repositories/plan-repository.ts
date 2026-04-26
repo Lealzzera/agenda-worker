@@ -17,6 +17,7 @@ export class PlanRepository implements IPlanRepository {
       maxUsers,
       maxWhatsappSessions,
       maxMonthlyAppointments,
+      stripePriceId,
     }: ICreatePlan,
   ): Promise<Plan> {
     const data = await client.plan.create({
@@ -28,6 +29,7 @@ export class PlanRepository implements IPlanRepository {
         max_users: maxUsers,
         max_whatsapp_sessions: maxWhatsappSessions,
         max_monthly_appointments: maxMonthlyAppointments,
+        stripe_price_id: stripePriceId,
       },
     });
     return data;
@@ -85,6 +87,7 @@ export class PlanRepository implements IPlanRepository {
       maxWhatsappSessions,
       maxMonthlyAppointments,
       trialDays,
+      stripePriceId,
     }: IUpdatePlan,
   ): Promise<Plan> {
     const data = await client.plan.update({
@@ -98,6 +101,7 @@ export class PlanRepository implements IPlanRepository {
         max_users: maxUsers,
         max_whatsapp_sessions: maxWhatsappSessions,
         max_monthly_appointments: maxMonthlyAppointments,
+        stripe_price_id: stripePriceId,
         trial_days: trialDays,
         updated_at: new Date(),
       },
