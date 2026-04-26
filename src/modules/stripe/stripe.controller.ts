@@ -18,6 +18,7 @@ export async function createStripeCheckoutSessionController(
   const stripe = new Stripe(env.STRIPE_SECRET_KEY);
   const session = await stripe.checkout.sessions.create({
     ui_mode: uiMode,
+    currency: "brl",
     line_items: [
       {
         price: priceId,
