@@ -9,6 +9,7 @@ export interface ICreatePlan {
   maxUsers?: number;
   maxWhatsappSessions?: number;
   maxMonthlyAppointments?: number | null;
+  stripePriceId: string;
 }
 
 export interface IUpdatePlan {
@@ -20,6 +21,7 @@ export interface IUpdatePlan {
   maxWhatsappSessions?: number;
   maxMonthlyAppointments?: number | null;
   trialDays?: number;
+  stripePriceId?: string;
 }
 
 export interface IPlanRepository {
@@ -33,6 +35,7 @@ export interface IPlanRepository {
       maxUsers,
       maxWhatsappSessions,
       maxMonthlyAppointments,
+      stripePriceId,
     }: ICreatePlan,
   ): Promise<Plan>;
   findByName(client: PrismaClientOrTx, name: string): Promise<Plan | null>;
