@@ -181,6 +181,21 @@ model Subscription {
   @@map("subscriptions")
 }
 
+model WhatsAppSession {
+  id String @id @default(uuid())
+  clinic_id String @unique
+  clinic Clinic @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
+  session_name String @unique
+  status WhatsAppSessionStatus @default(STARTING)
+  phone_number String?
+  engine String @default("WEBJS")
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([status])
+  @@map("whatsapp_sessions")
+}
+
 enum UserStatus {
   ACTIVE
   INACTIVE
@@ -239,21 +254,6 @@ enum AppointmentStatus {
   CONFIRMED
   CANCELED
   COMPLETED
-}
-
-model WhatsAppSession {
-  id String @id @default(uuid())
-  clinic_id String @unique
-  clinic Clinic @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
-  session_name String @unique
-  status WhatsAppSessionStatus @default(STARTING)
-  phone_number String?
-  engine String @default("WEBJS")
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  @@index([status])
-  @@map("whatsapp_sessions")
 }
 
 enum WhatsAppSessionStatus {

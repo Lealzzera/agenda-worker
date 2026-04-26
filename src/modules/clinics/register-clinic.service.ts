@@ -34,12 +34,6 @@ interface IServiceInput {
 interface ISettingsInput {
   chargesEvaluation?: boolean;
   evaluationPriceCents?: number;
-  maxAppointmentsPerSlot?: number;
-  appointmentDurationMinutes?: number;
-  allowRescheduling?: boolean;
-  allowCancellation?: boolean;
-  timezone?: string;
-  aiAgentName?: string;
 }
 
 interface IRegisterClinicRequest {
@@ -118,7 +112,10 @@ export class RegisterClinicService {
     const baseClinicSlug = clinicName.toLowerCase().replace(/[^a-z0-9-]/g, "-");
     const clinicSlug = baseClinicSlug.concat("-" + randomUUID().slice(0, 6));
     const passwordHash = await hash(password, 6);
-    const trialEndsDate = new Date().setDate(new Date().getDate() + 14);
+    const trialEndsDate = new Date().setDate(
+      new Date().getDate() + doesThePlanExist.trial_days,
+    );
+    const currentPeriodStart = new Date();
 
     await prisma.$transaction(async (tx) => {
       const user = await this.userRepository.create(tx, {
@@ -150,7 +147,10 @@ export class RegisterClinicService {
         planId,
         status: SubscriptionStatus.TRIALING,
         trialEndsAt: new Date(trialEndsDate),
+        currentPeriodStart,
+        currentPeriodEnd: new Date(trialEndsDate),
       });
+
       if (settings) {
         await this.clinicSettingsRepository.create(tx, {
           clinicId: clinic.id,
@@ -158,12 +158,6 @@ export class RegisterClinicService {
           evaluationPriceCents: settings.chargesEvaluation
             ? settings.evaluationPriceCents
             : 0,
-          maxAppointmentsPerSlot: settings.maxAppointmentsPerSlot,
-          appointmentDurationMinutes: settings.appointmentDurationMinutes,
-          allowRescheduling: settings.allowRescheduling,
-          allowCancellation: settings.allowCancellation,
-          timezone: settings.timezone,
-          aiAgentName: settings.aiAgentName,
         });
       }
 
