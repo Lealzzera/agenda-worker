@@ -9,32 +9,19 @@ import { IClinicRepository } from "@/modules/clinics/repositories/clinic-reposit
 import { ISubscriptionRepository } from "@/modules/subscription/repositories/subscription-repository.interface";
 import { IUserRepository } from "@/modules/user/repositories/user-repository.interface";
 import {
+  IServiceInput,
+  ISettingsInput,
+  IWorkingHourInput,
+} from "@/types/types";
+import {
   ClinicRole,
   ClinicType,
   MemberStatus,
   SubscriptionStatus,
-  Weekday,
 } from "@prisma/client";
 import { hash } from "bcrypt";
 import { randomUUID } from "crypto";
 import { IPlanRepository } from "../plan/repositories/plan-repository.interface";
-
-interface IWorkingHourInput {
-  weekday: Weekday;
-  startTime: string;
-  endTime: string;
-}
-
-interface IServiceInput {
-  name: string;
-  durationMinutes: number;
-  priceCents?: number;
-}
-
-interface ISettingsInput {
-  chargesEvaluation?: boolean;
-  evaluationPriceCents?: number;
-}
 
 interface IRegisterClinicRequest {
   userFullName: string;
