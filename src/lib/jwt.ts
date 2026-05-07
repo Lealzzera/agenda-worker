@@ -3,6 +3,7 @@ import { env } from '../env';
 
 export interface AccessTokenPayload {
     sub: string;
+    email: string;
     role: 'ADMIN' | 'USER';
 }
 
@@ -10,10 +11,9 @@ export interface RefreshTokenPayload {
     sub: string;
 }
 
-
 export function signAccessToken(payload: AccessTokenPayload) {
     return jwt.sign(payload, env.JWT_SECRET, {
-        expiresIn: '15m'
+        expiresIn: '1d'
     })
 }
 

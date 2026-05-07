@@ -1,6 +1,7 @@
 import { prisma } from "@/db/prisma";
 import { env } from "@/env";
 import { NotFoundError } from "@/errors/not-found.error";
+import { PlanRepository } from "@/modules/plan/repositories/plan-repository";
 import { SignupDraftRepository } from "@/modules/signup-draft/repositories/signup-draft-repository";
 import { FastifyReply, FastifyRequest } from "fastify";
 import Stripe from "stripe";
@@ -27,11 +28,19 @@ export async function createStripeCheckoutSessionController(
     throw new NotFoundError("Signup draft not found or already completed.");
   }
 
+  const planRepository = new PlanRepository();
+  const plan = await planRepository.findPlanById(prisma, draft.selected_plan_id);
+
+  if (!plan) {
+    throw new NotFoundError("Plan not found.");
+  }
+
   const stripe = new Stripe(env.STRIPE_SECRET_KEY);
 
   const session = await stripe.checkout.sessions.create({
     subscription_data: {
-      trial_period_days: 7,
+      // usa os trial_days do plano em vez de hardcoded 7
+      ...(plan.trial_days > 0 && { trial_period_days: plan.trial_days }),
       metadata: { draftId },
     },
     client_reference_id: draftId,
