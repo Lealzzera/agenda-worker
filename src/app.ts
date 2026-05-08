@@ -13,8 +13,8 @@ export default async function routes(app: FastifyInstance) {
   app.register(authRoutes, { prefix: "/auth" });
   app.register(clinicRoutes, { prefix: "/clinic" });
   app.register(userRoutes, { prefix: "/user" });
-  app.register(whatsappRoutes, { prefix: "/whatsapp" });
   app.register(stripeRoutes, { prefix: "/stripe" });
   app.register(appointmentRoutes, { prefix: "/appointments" });
   app.register(signupDraftRoutes, { prefix: "/signup-draft" });
+  app.register(whatsappRoutes, { prefix: "/whatsapp" });
 }
