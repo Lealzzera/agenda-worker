@@ -137,6 +137,20 @@ export class WhatsAppService {
   }
 
   /**
+   * Cria e já inicia a sessão em uma única chamada.
+   * Se a sessão já existir (422), ignora silenciosamente.
+   */
+  async createAndStartSession(name: string): Promise<void> {
+    try {
+      await this.request<IWahaSessionInfo>("POST", "/api/sessions", { name, start: true });
+    } catch (err) {
+      // 422 = sessão já existe, tudo bem
+      if (err instanceof WahaError && err.status === 422) return;
+      throw err;
+    }
+  }
+
+  /**
    * Pausa a sess\u00e3o no WAHA mantendo as credenciais de pareamento.
    * Usar no logout / beforeunload \u2014 pr\u00f3ximo start reautentica sem QR novo.
    */
