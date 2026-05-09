@@ -2,6 +2,7 @@ import { verifyJwt } from "@/middlewares/verify-jwt";
 import { FastifyInstance } from "fastify";
 import { chatOverviewController } from "./chat-overview.controller";
 import { disconnectController } from "./disconnect.controller";
+import { getChatMessagesController } from "./get-chat-messages.controller";
 import { postQrCodeController } from "./qrCode.controller";
 import { sendMessageController } from "./send-message.controller";
 
@@ -24,6 +25,13 @@ export async function whatsappRoutes(app: FastifyInstance) {
     { preHandler: [verifyJwt] },
     async (req, res) => {
       return chatOverviewController(req, res);
+    },
+  );
+  app.get(
+    "/chats/:sessionName/:chatId/messages",
+    { preHandler: [verifyJwt] },
+    async (req, res) => {
+      return getChatMessagesController(req, res);
     },
   );
 }
