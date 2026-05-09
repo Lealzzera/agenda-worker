@@ -25,38 +25,32 @@ export async function chatOverviewController(
       .send({ error: "WAHA_URL or WAHA_API_KEY not found" });
   }
   try {
-    const bodyJson = {
-      pagination: {
-        ...pagination,
-        merge: false,
-      },
-    };
     const response = await fetch(
-      `${env.WAHA_URL}/${sessionName}/chats/overview`,
+      `${env.WAHA_URL}/${sessionName}/chats/overview?merge=true&limit=${pagination.limit}&offset=${pagination.offset || 0}`,
       {
-        method: "POST",
+        method: "GET",
         headers: {
           "Content-Type": "application/json",
           "X-Api-Key": env.WAHA_API_KEY,
         },
-        body: JSON.stringify(bodyJson),
       },
     );
 
     const data = await response.json();
 
     const listWihtoutGroupChats = data.filter((chat: any) =>
-      chat.id.includes("c.us"),
+      chat.id.includes("@c.us"),
     );
 
     const listContentFiltered = listWihtoutGroupChats.map((chat: any) => {
       const formattedNumber = chat.id.replace(
-        /^(\d{2})(\d{2})(\d{5})(\d{4})@c\.us$/,
+        /^(\d{2})(\d{2})(\d{4,5}?)(\d{4})@c\.us$/,
         "+$1 $2 $3-$4",
       );
       return {
-        id: formattedNumber,
-        contactName: chat.name ?? formattedNumber,
+        id: chat.id,
+        phoneNumber: formattedNumber,
+        contactName: !chat.name ? formattedNumber : chat.name,
         contactPicture: chat.picture,
         lastMessage: {
           message: chat.lastMessage?.hasMedia
@@ -68,7 +62,6 @@ export async function chatOverviewController(
       };
     });
 
-    console.log({ bodyJson, listContentFiltered });
     return res.status(200).send(listContentFiltered);
   } catch (error) {
     return res.status(500).send({ error: "Failed to get chat overview" });

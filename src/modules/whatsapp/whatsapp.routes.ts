@@ -1,7 +1,9 @@
 import { verifyJwt } from "@/middlewares/verify-jwt";
 import { FastifyInstance } from "fastify";
+import { chatOverviewController } from "./chat-overview.controller";
 import { disconnectController } from "./disconnect.controller";
 import { postQrCodeController } from "./qrCode.controller";
+import { sendMessageController } from "./send-message.controller";
 
 export async function whatsappRoutes(app: FastifyInstance) {
   app.post("/qr-code", { preHandler: [verifyJwt] }, async (req, res) => {
@@ -12,6 +14,16 @@ export async function whatsappRoutes(app: FastifyInstance) {
     { preHandler: [verifyJwt] },
     async (req, res) => {
       return disconnectController(req, res);
+    },
+  );
+  app.post("/send-message", { preHandler: [verifyJwt] }, async (req, res) => {
+    return sendMessageController(req, res);
+  });
+  app.post(
+    "/chats/:sessionName/overview",
+    { preHandler: [verifyJwt] },
+    async (req, res) => {
+      return chatOverviewController(req, res);
     },
   );
 }

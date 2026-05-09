@@ -17,7 +17,7 @@ export async function postQrCodeController(
   }
 
   try {
-    const getWahaSession = await fetch(`${env.WAHA_URL}/api/sessions`, {
+    const getWahaSession = await fetch(`${env.WAHA_URL}/sessions`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -47,7 +47,7 @@ export async function postQrCodeController(
 
       case "SCAN_QR_CODE":
         const qrCode = await fetch(
-          `${env.WAHA_URL}/api/${sessionName}/auth/qr?format=image`,
+          `${env.WAHA_URL}/${sessionName}/auth/qr?format=image`,
           {
             method: "GET",
             headers: {
@@ -66,7 +66,7 @@ export async function postQrCodeController(
         });
 
       case "FAILED":
-        await fetch(`${env.WAHA_URL}/api/sessions/${sessionName}`, {
+        await fetch(`${env.WAHA_URL}/sessions/${sessionName}`, {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
@@ -78,7 +78,7 @@ export async function postQrCodeController(
         break;
     }
 
-    const wahaSession = await fetch(`${env.WAHA_URL}/api/sessions`, {
+    const wahaSession = await fetch(`${env.WAHA_URL}/sessions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -87,6 +87,14 @@ export async function postQrCodeController(
       body: JSON.stringify({
         name: sessionName,
         start: true,
+        config: {
+          noweb: {
+            store: {
+              enabled: true,
+              fullSync: true,
+            },
+          },
+        },
       }),
     });
 
@@ -94,7 +102,7 @@ export async function postQrCodeController(
 
     if (responseJson.statusCode === 422) {
       const restartSession = await fetch(
-        `${env.WAHA_URL}/api/sessions/${sessionName}/restart`,
+        `${env.WAHA_URL}/sessions/${sessionName}/restart`,
         {
           method: "POST",
           headers: {
@@ -107,7 +115,7 @@ export async function postQrCodeController(
       await restartSession.json();
 
       const qrCode = await fetch(
-        `${env.WAHA_URL}/api/${sessionName}/auth/qr?format=image`,
+        `${env.WAHA_URL}/${sessionName}/auth/qr?format=image`,
         {
           method: "GET",
           headers: {
@@ -124,7 +132,7 @@ export async function postQrCodeController(
       return { qrCode: imageUrl };
     }
     const qrCode = await fetch(
-      `${env.WAHA_URL}/api/${sessionName}/auth/qr?format=image`,
+      `${env.WAHA_URL}/${sessionName}/auth/qr?format=image`,
       {
         method: "GET",
         headers: {

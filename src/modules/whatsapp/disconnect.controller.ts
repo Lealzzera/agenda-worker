@@ -16,16 +16,13 @@ export async function disconnectController(
     return res.status(500).send({ error: "WAHA_API_KEY is not defined" });
   }
   try {
-    const response = await fetch(
-      `${env.WAHA_URL}/api/sessions/${sessionName}`,
-      {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Api-Key": env.WAHA_API_KEY,
-        },
+    const response = await fetch(`${env.WAHA_URL}/sessions/${sessionName}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Api-Key": env.WAHA_API_KEY,
       },
-    );
+    });
 
     if (!response.ok) {
       const body = await response.text();
