@@ -10,6 +10,7 @@ type UpdatePlanData = {
   maxWhatsappSessions?: number;
   maxMonthlyAppointments?: number | null;
   trialDays?: number;
+  stripePriceId?: string;
 };
 
 type UpdatePlanServiceRequest = {

@@ -34,7 +34,7 @@ model Clinic {
   postal_code String?
   city String?
   state String?
-  status ClinicStatus @default(ACTIVE)
+  status ClinicStatus @default(AWAITING_PAYMENT)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
   members ClinicMember[]
@@ -44,6 +44,7 @@ model Clinic {
   special_dates ClinicSpecialDate[]
   services ClinicService[]
   appointments Appointments[]
+  whatsapp_session WhatsAppSession?
 
   @@index([status])
   @@map("clinics")
@@ -144,19 +145,40 @@ model ClinicMember {
 
 model Plan {
   id String @id @default(uuid())
+  stripe_price_id String? @unique
   name String
   description String?
   code String @unique
   price_monthly Int
   trial_days Int @default(7)
-  max_users Int?
-  max_whatsapp_sessions Int?
+  max_users Int? @default(1)
+  max_whatsapp_sessions Int? @default(1)
   max_monthly_appointments Int? @default(50)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
   subscriptions Subscription[]
+  signup_drafts SignupDraft[]
 
   @@map("plans")
+}
+
+model SignupDraft {
+  id String @id @default(uuid())
+  email String @unique
+  password_hash String
+  full_name String
+  selected_plan_id String
+  plan Plan @relation(fields: [selected_plan_id], references: [id])
+  data Json
+  stripe_checkout_session_id String? @unique
+  status SignupDraftStatus @default(PENDING)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  expires_at DateTime?
+
+  @@index([email])
+  @@index([status])
+  @@map("signup_drafts")
 }
 
 model Subscription {
@@ -165,6 +187,9 @@ model Subscription {
   clinic Clinic @relation(fields: [clinic_id], references: [id])
   plan_id String
   plan Plan @relation(fields: [plan_id], references: [id])
+  stripe_customer_id String?
+  stripe_subscription_id String? @unique
+  stripe_checkout_session_id String? @unique
   status SubscriptionStatus
   trial_ends_at DateTime?
   current_period_start DateTime?
@@ -176,7 +201,23 @@ model Subscription {
   @@index([clinic_id])
   @@index([clinic_id, status])
   @@index([plan_id])
+  @@index([stripe_customer_id])
   @@map("subscriptions")
+}
+
+model WhatsAppSession {
+  id String @id @default(uuid())
+  clinic_id String @unique
+  clinic Clinic @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
+  session_name String @unique
+  status WhatsAppSessionStatus @default(STARTING)
+  phone_number String?
+  engine String @default("WEBJS")
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([status])
+  @@map("whatsapp_sessions")
 }
 
 enum UserStatus {
@@ -187,6 +228,7 @@ enum UserStatus {
 enum ClinicStatus {
   ACTIVE
   SUSPENDED
+  AWAITING_PAYMENT
 }
 
 enum ClinicRole {
@@ -236,4 +278,18 @@ enum AppointmentStatus {
   CONFIRMED
   CANCELED
   COMPLETED
+}
+
+enum WhatsAppSessionStatus {
+  STARTING
+  SCAN_QR_CODE
+  WORKING
+  FAILED
+  STOPPED
+}
+
+enum SignupDraftStatus {
+  PENDING
+  COMPLETED
+  EXPIRED
 }

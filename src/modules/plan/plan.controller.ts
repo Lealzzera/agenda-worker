@@ -15,6 +15,7 @@ export type UpdatePlanBody = {
   maxUsers?: number;
   maxWhatsappSessions?: number;
   maxMonthlyAppointments?: number | null;
+  stripePriceId: string;
 };
 
 export async function createPlanController(
@@ -29,6 +30,7 @@ export async function createPlanController(
     maxUsers: z.number().int().optional(),
     maxWhatsappSessions: z.number().int().optional(),
     maxMonthlyAppointments: z.number().int().optional().nullable(),
+    stripePriceId: z.string(),
   });
 
   const {
@@ -39,6 +41,7 @@ export async function createPlanController(
     maxUsers,
     maxWhatsappSessions,
     maxMonthlyAppointments,
+    stripePriceId,
   } = createPlanBodySchema.parse(req.body);
 
   const planService = makeCreateRegisterPlanServiceFactory();
@@ -50,6 +53,7 @@ export async function createPlanController(
     maxUsers,
     maxWhatsappSessions,
     maxMonthlyAppointments,
+    stripePriceId,
   });
 
   return res.status(201).send({ message: "Plan created successfully" });
@@ -77,6 +81,7 @@ export async function patchUpdatePlanController(
       maxUsers: z.number().int().optional(),
       maxWhatsappSessions: z.number().int().optional(),
       maxMonthlyAppointments: z.number().int().optional().nullable(),
+      stripePriceId: z.string().optional(),
     })
     .optional();
 
@@ -89,6 +94,7 @@ export async function patchUpdatePlanController(
     maxUsers,
     maxMonthlyAppointments,
     maxWhatsappSessions,
+    stripePriceId,
   } = planData || {};
   const updatePlanService = makeUpdatePlanServiceFactory();
   await updatePlanService.exec({
@@ -100,6 +106,7 @@ export async function patchUpdatePlanController(
       maxUsers,
       maxMonthlyAppointments,
       maxWhatsappSessions,
+      stripePriceId,
     },
   });
   return res.status(200).send({ message: "Plan updated successfully" });

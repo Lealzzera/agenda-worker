@@ -1,23 +1,37 @@
+import { verifyJwt } from "@/middlewares/verify-jwt";
 import { FastifyInstance } from "fastify";
-import {
-    startSessionController,
-    stopSessionController,
-    sendMessageController,
-    getQrCodeController,
-    getSessionsController,
-    wahaWebhookController,
-} from "./whatsapp.controller";
+import { chatOverviewController } from "./chat-overview.controller";
+import { disconnectController } from "./disconnect.controller";
+import { getChatMessagesController } from "./get-chat-messages.controller";
+import { postQrCodeController } from "./qrCode.controller";
+import { sendMessageController } from "./send-message.controller";
 
 export async function whatsappRoutes(app: FastifyInstance) {
-    app.post("/sessions", async (req, res) => startSessionController(req, res));
-    app.delete("/sessions/:session", async (req, res) => stopSessionController(req, res));
-    app.get("/sessions", async (_req, res) => getSessionsController(_req, res));
-    app.post("/send", async (req, res) => sendMessageController(req, res));
-    app.get("/qr/:session", async (req, res) => getQrCodeController(req, res));
-
-    app.post("/webhook", {
-        config: {
-            rateLimit: { max: 100, timeWindow: "1 minute" },
-        },
-    }, async (req, res) => wahaWebhookController(req, res));
+  app.post("/qr-code", { preHandler: [verifyJwt] }, async (req, res) => {
+    return postQrCodeController(req, res);
+  });
+  app.delete(
+    "/disconnect/:sessionName",
+    { preHandler: [verifyJwt] },
+    async (req, res) => {
+      return disconnectController(req, res);
+    },
+  );
+  app.post("/send-message", { preHandler: [verifyJwt] }, async (req, res) => {
+    return sendMessageController(req, res);
+  });
+  app.post(
+    "/chats/:sessionName/overview",
+    { preHandler: [verifyJwt] },
+    async (req, res) => {
+      return chatOverviewController(req, res);
+    },
+  );
+  app.get(
+    "/chats/:sessionName/:chatId/messages",
+    { preHandler: [verifyJwt] },
+    async (req, res) => {
+      return getChatMessagesController(req, res);
+    },
+  );
 }

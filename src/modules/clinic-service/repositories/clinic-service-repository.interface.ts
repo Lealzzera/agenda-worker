@@ -11,4 +11,5 @@ export interface ICreateClinicService {
 export interface IClinicServiceRepository {
     create(client: PrismaClientOrTx, { clinicId, name, durationMinutes, priceCents }: ICreateClinicService): Promise<ClinicService>
     createMany(client: PrismaClientOrTx, clinicId: string, data: Omit<ICreateClinicService, 'clinicId'>[]): Promise<void>
+    findByIdAndClinicId(client: PrismaClientOrTx, id: string, clinicId: string): Promise<ClinicService | null>
 }

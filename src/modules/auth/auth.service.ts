@@ -16,25 +16,23 @@ interface AuthServiceResponse {
 
 export class AuthService {
     constructor(private readonly userRepository: IUserRepository) {}
+
     async exec({email, password}: AuthServiceRequest): Promise<AuthServiceResponse> {
-        const doesUserExist = await this.userRepository.findByEmail(prisma, email)
-        
-        if(!doesUserExist) {
+        const user = await this.userRepository.findByEmail(prisma, email)
+
+        if(!user) {
             throw new UnauthorizedError('Invalid user credentials')
         }
 
-        const isPasswordValid = await compare(password, doesUserExist.password_hash)
+        const isPasswordValid = await compare(password, user.password_hash)
 
         if(!isPasswordValid) {
             throw new UnauthorizedError('Invalid user credentials')
         }
 
-        const accessToken = signAccessToken({sub: doesUserExist.id, role: doesUserExist.role})
-        const refreshToken = signRefreshToken({sub: doesUserExist.id})
+        const accessToken = signAccessToken({ sub: user.id, email: user.email, role: user.role })
+        const refreshToken = signRefreshToken({ sub: user.id })
 
-        return {
-            accessToken,
-            refreshToken
-        }
+        return { accessToken, refreshToken }
     }
 }

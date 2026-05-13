@@ -25,4 +25,14 @@ export class ClinicServiceRepository implements IClinicServiceRepository {
             }))
         })
     }
+
+    async findByIdAndClinicId(client: PrismaClientOrTx, id: string, clinicId: string): Promise<ClinicService | null> {
+        const clinicService = await client.clinicService.findFirst({
+            where: {
+                id,
+                clinic_id: clinicId,
+            }
+        })
+        return clinicService
+    }
 }

@@ -10,6 +10,7 @@ interface IPlanServiceRequest {
   maxUsers?: number;
   maxWhatsappSessions?: number;
   maxMonthlyAppointments?: number | null;
+  stripePriceId: string;
 }
 
 export class RegisterPlanService {
@@ -22,6 +23,7 @@ export class RegisterPlanService {
     maxUsers,
     maxWhatsappSessions,
     maxMonthlyAppointments,
+    stripePriceId,
   }: IPlanServiceRequest): Promise<void> {
     const doesThePlanNameExists = await this.planRepository.findByName(
       prisma,
@@ -44,6 +46,7 @@ export class RegisterPlanService {
       maxUsers,
       maxWhatsappSessions,
       maxMonthlyAppointments,
+      stripePriceId,
     });
   }
 }
