@@ -19,7 +19,7 @@ export class SignupDraftRepository implements ISignupDraftRepository {
       status,
     }: CreateSignupDraft,
   ): Promise<SignupDraft> {
-    return client.signupDraft.upsert({
+    const draftSignUp = await client.signupDraft.upsert({
       where: { email },
       create: {
         email,
@@ -41,32 +41,30 @@ export class SignupDraftRepository implements ISignupDraftRepository {
         status: status ?? "PENDING",
       },
     });
+    return draftSignUp;
   }
 
   async findById(
     client: PrismaClientOrTx,
     id: string,
   ): Promise<SignupDraft | null> {
-    return client.signupDraft.findUnique({ where: { id } });
+    const draftSignUp = await client.signupDraft.findUnique({ where: { id } });
+    return draftSignUp;
   }
 
-  async findByStripeSessionId(
-    client: PrismaClientOrTx,
-    stripeSessionId: string,
-  ): Promise<SignupDraft | null> {
-    return client.signupDraft.findUnique({
-      where: { stripe_checkout_session_id: stripeSessionId },
-    });
+  async delete(client: PrismaClientOrTx, id: string): Promise<void> {
+    await client.signupDraft.delete({ where: { id } });
   }
 
-  async linkStripeSession(
+  async updateDraft(
     client: PrismaClientOrTx,
-    draftId: string,
-    stripeSessionId: string,
-  ): Promise<void> {
-    await client.signupDraft.update({
-      where: { id: draftId },
-      data: { stripe_checkout_session_id: stripeSessionId },
+    id: string,
+    data: any,
+  ): Promise<SignupDraft> {
+    const draftSignUp = await client.signupDraft.update({
+      where: { id },
+      data,
     });
+    return draftSignUp;
   }
 }

@@ -31,9 +31,38 @@ export interface CreateSignupDraft {
   expiresAt: Date;
 }
 
+export interface UpdateSignupDraft {
+  email?: string;
+  password_hash?: string;
+  full_name?: string;
+  selected_plan_id?: string;
+  data?: {
+    clinicName?: string;
+    clinicType?: ClinicType;
+    phone?: string;
+    address?: string;
+    postalCode?: string;
+    city?: string;
+    state?: string;
+    planId?: string;
+    workingHours?: IWorkingHourInput[];
+    services?: IServiceInput[];
+    settings?: ISettingsInput;
+  };
+  stripe_checkout_session_id?: string;
+  status?: SignupDraftStatus;
+}
+
 export interface ISignupDraftRepository {
-  create(client: PrismaClientOrTx, data: CreateSignupDraft): Promise<SignupDraft>;
+  create(
+    client: PrismaClientOrTx,
+    data: CreateSignupDraft,
+  ): Promise<SignupDraft>;
   findById(client: PrismaClientOrTx, id: string): Promise<SignupDraft | null>;
-  findByStripeSessionId(client: PrismaClientOrTx, stripeSessionId: string): Promise<SignupDraft | null>;
-  linkStripeSession(client: PrismaClientOrTx, draftId: string, stripeSessionId: string): Promise<void>;
+  delete(client: PrismaClientOrTx, id: string): Promise<void>;
+  updateDraft(
+    client: PrismaClientOrTx,
+    id: string,
+    data: UpdateSignupDraft,
+  ): Promise<SignupDraft>;
 }
