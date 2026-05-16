@@ -3,6 +3,7 @@ import { appointmentRoutes } from "./modules/appointments/appointment.routes";
 import { authRoutes } from "./modules/auth/auth.routes";
 import { clinicRoutes } from "./modules/clinics/clinic.routes";
 import { planRoutes } from "./modules/plan/plan.routes";
+import { realtimeRoutes } from "./modules/realtime/realtime.routes";
 import { signupDraftRoutes } from "./modules/signup-draft/signup-draft.routes";
 import { stripeRoutes } from "./modules/stripe/stripe.routes";
 import { userRoutes } from "./modules/user/user.routes";
@@ -17,4 +18,5 @@ export default async function routes(app: FastifyInstance) {
   app.register(appointmentRoutes, { prefix: "/appointments" });
   app.register(signupDraftRoutes, { prefix: "/signup-draft" });
   app.register(whatsappRoutes, { prefix: "/whatsapp" });
+  app.register(realtimeRoutes, { prefix: "/realtime" });
 }

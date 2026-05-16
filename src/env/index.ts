@@ -19,6 +19,7 @@ const envSchema = z.object({
   WAHA_EDITION: z.enum(["core", "plus"]).default("plus"),
   STRIPE_SECRET_KEY: z.string(),
   STRIPE_WEBHOOK_SECRET: z.string(),
+  COOKIE_SECRET: z.string(),
 });
 
 const parsed = envSchema.safeParse(process.env);
