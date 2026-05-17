@@ -1,6 +1,6 @@
 import { ClinicRepository } from "@/modules/clinics/repositories/clinic-repository";
-import { ClinicSpecialDateRepository } from "../clinic-special-date-repository";
-import { CreateSpecialDateService } from "../create-special-date.service";
+import { ClinicSpecialDateRepository } from "../repositories/clinic-special-date-repository";
+import { CreateSpecialDateService } from "../repositories/create-special-date.service";
 
 export default function makeCreateSpecialDateServiceFactory() {
   const clinicRepository = new ClinicRepository();

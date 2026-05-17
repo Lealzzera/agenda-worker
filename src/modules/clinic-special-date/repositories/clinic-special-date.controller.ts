@@ -2,10 +2,10 @@ import { BadRequestError } from "@/errors/bad-request.error";
 import { NotFoundError } from "@/errors/not-found.error";
 import { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
-import makeCreateSpecialDateServiceFactory from "./factories/make-create-special-date-service.factory";
-import makeDeleteSpecialDateServiceFactory from "./factories/make-delete-special-date-service.factory";
-import makeListSpecialDateServiceFactory from "./factories/make-list-special-date-service.factory";
-import makeUpdateSpecialDateServiceFactory from "./factories/make-update-special-date-service.factory";
+import makeCreateSpecialDateServiceFactory from "../factories/make-create-special-date-service.factory";
+import makeDeleteSpecialDateServiceFactory from "../factories/make-delete-special-date-service.factory";
+import makeListSpecialDateServiceFactory from "../factories/make-list-special-date-service.factory";
+import makeUpdateSpecialDateServiceFactory from "../factories/make-update-special-date-service.factory";
 
 const periodsSchema = z
   .array(
