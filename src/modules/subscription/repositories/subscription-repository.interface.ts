@@ -1,16 +1,33 @@
-import { Prisma, Subscription, SubscriptionStatus } from "@prisma/client";
 import { PrismaClientOrTx } from "@/types/prisma.type";
+import { Subscription, SubscriptionStatus } from "@prisma/client";
 
 export interface ICreateSubscription {
-    clinicId: string;
-    planId: string;
-    status: SubscriptionStatus;
-    trialEndsAt?: Date;
-    currentPeriodStart?: Date;
-    currentPeriodEnd?: Date;
+  clinicId: string;
+  planId: string;
+  status: SubscriptionStatus;
+  trialEndsAt?: Date;
+  currentPeriodStart?: Date;
+  currentPeriodEnd?: Date;
+  stripeCheckoutSessionId?: string;
+  stripeSubscriptionId?: string;
 }
 
 export interface ISubscriptionRepository {
-    create(client: PrismaClientOrTx, {clinicId, planId, status, trialEndsAt, currentPeriodStart, currentPeriodEnd}: ICreateSubscription): Promise<Subscription>
-    findActiveByClinicId(client: PrismaClientOrTx, clinicId: string): Promise<Subscription | null>
+  create(
+    client: PrismaClientOrTx,
+    {
+      clinicId,
+      planId,
+      status,
+      trialEndsAt,
+      currentPeriodStart,
+      currentPeriodEnd,
+      stripeCheckoutSessionId,
+      stripeSubscriptionId,
+    }: ICreateSubscription,
+  ): Promise<Subscription>;
+  findActiveByClinicId(
+    client: PrismaClientOrTx,
+    clinicId: string,
+  ): Promise<Subscription | null>;
 }

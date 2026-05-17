@@ -4,6 +4,9 @@ import { ISignupDraftRepository } from "../signup-draft/repositories/signup-draf
 
 type RegisterUserClinicAccountServiceRequest = {
   draftId: string;
+  stripeCheckoutSessionId: string;
+  stripeCustomerId: string;
+  stripeSubscriptionId: string;
 };
 
 type RegisterUserClinicData = {
@@ -25,7 +28,6 @@ type RegisterUserClinicData = {
     postalCode: string;
     workingHours: any[];
   };
-  stripe_checkout_session_id: string;
   status: string;
   created_at: Date;
   updated_at: Date;
@@ -35,12 +37,17 @@ type RegisterUserClinicData = {
 export class RegisterUserClinicAccountService {
   constructor(private readonly signupDraftRepository: ISignupDraftRepository) {}
 
-  async exec({ draftId }: RegisterUserClinicAccountServiceRequest) {
+  async exec({
+    draftId,
+    stripeCheckoutSessionId,
+    stripeCustomerId,
+    stripeSubscriptionId,
+  }: RegisterUserClinicAccountServiceRequest) {
     const registerClinicService = makeCreateRegisterClinicServiceFactory();
     const draftFromDatabase = (await this.signupDraftRepository.findById(
       prisma,
       draftId,
-    )) as RegisterUserClinicData;
+    )) as RegisterUserClinicData | null;
 
     if (!draftFromDatabase) {
       throw new Error("Draft not found");
@@ -61,6 +68,9 @@ export class RegisterUserClinicAccountService {
       settings: draftFromDatabase.data.settings,
       workingHours: draftFromDatabase.data.workingHours,
       clinicType: draftFromDatabase.data.clinicType as any,
+      stripeCustomerId,
+      stripeSubscriptionId,
+      stripeCheckoutSessionId,
     });
 
     await this.signupDraftRepository.delete(prisma, draftId);
