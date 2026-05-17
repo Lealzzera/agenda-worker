@@ -10,6 +10,7 @@ export interface ICreateSubscription {
   currentPeriodEnd?: Date;
   stripeCheckoutSessionId?: string;
   stripeSubscriptionId?: string;
+  lastStripeInvoiceId?: string;
 }
 
 export interface ISubscriptionRepository {
@@ -24,10 +25,20 @@ export interface ISubscriptionRepository {
       currentPeriodEnd,
       stripeCheckoutSessionId,
       stripeSubscriptionId,
+      lastStripeInvoiceId,
     }: ICreateSubscription,
   ): Promise<Subscription>;
   findActiveByClinicId(
     client: PrismaClientOrTx,
     clinicId: string,
+  ): Promise<Subscription | null>;
+  updateSubscription(
+    client: PrismaClientOrTx,
+    stripeSubscriptionId: string,
+    data: Partial<Subscription>,
+  ): Promise<Subscription>;
+  findByStripeSubscriptionId(
+    client: PrismaClientOrTx,
+    stripeSubscriptionId: string,
   ): Promise<Subscription | null>;
 }

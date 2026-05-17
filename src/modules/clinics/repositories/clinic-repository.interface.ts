@@ -33,4 +33,9 @@ export interface IClinicRepository {
     }: ICreateClinic,
   ): Promise<Clinic>;
   findById(client: PrismaClientOrTx, id: string): Promise<Clinic | null>;
+  updateClinic(
+    client: PrismaClientOrTx,
+    id: string,
+    data: Partial<Clinic>,
+  ): Promise<Clinic>;
 }

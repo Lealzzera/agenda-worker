@@ -7,6 +7,7 @@ type RegisterUserClinicAccountServiceRequest = {
   stripeCheckoutSessionId: string;
   stripeCustomerId: string;
   stripeSubscriptionId: string;
+  lastStripeInvoiceId: string;
 };
 
 type RegisterUserClinicData = {
@@ -42,6 +43,7 @@ export class RegisterUserClinicAccountService {
     stripeCheckoutSessionId,
     stripeCustomerId,
     stripeSubscriptionId,
+    lastStripeInvoiceId,
   }: RegisterUserClinicAccountServiceRequest) {
     const registerClinicService = makeCreateRegisterClinicServiceFactory();
     const draftFromDatabase = (await this.signupDraftRepository.findById(
@@ -71,6 +73,7 @@ export class RegisterUserClinicAccountService {
       stripeCustomerId,
       stripeSubscriptionId,
       stripeCheckoutSessionId,
+      lastStripeInvoiceId,
     });
 
     await this.signupDraftRepository.delete(prisma, draftId);

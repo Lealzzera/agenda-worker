@@ -48,4 +48,18 @@ export class ClinicRepository implements IClinicRepository {
     });
     return data;
   }
+
+  async updateClinic(
+    client: PrismaClientOrTx,
+    id: string,
+    data: Partial<Clinic>,
+  ): Promise<Clinic> {
+    const updatedClinic = await client.clinic.update({
+      where: {
+        id,
+      },
+      data,
+    });
+    return updatedClinic;
+  }
 }

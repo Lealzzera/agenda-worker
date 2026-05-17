@@ -17,6 +17,7 @@ export class SubscriptionRepository implements ISubscriptionRepository {
       currentPeriodEnd,
       stripeCheckoutSessionId,
       stripeSubscriptionId,
+      lastStripeInvoiceId,
     }: ICreateSubscription,
   ): Promise<Subscription> {
     const data = await client.subscription.create({
@@ -29,6 +30,7 @@ export class SubscriptionRepository implements ISubscriptionRepository {
         current_period_end: currentPeriodEnd,
         stripe_checkout_session_id: stripeCheckoutSessionId,
         stripe_subscription_id: stripeSubscriptionId,
+        last_stripe_invoice_id: lastStripeInvoiceId,
       },
     });
     return data;
@@ -45,6 +47,32 @@ export class SubscriptionRepository implements ISubscriptionRepository {
       },
     });
 
+    return data || null;
+  }
+
+  async updateSubscription(
+    client: PrismaClientOrTx,
+    stripeSubscriptionId: string,
+    data: Subscription,
+  ): Promise<Subscription> {
+    const updated = await client.subscription.update({
+      where: {
+        stripe_subscription_id: stripeSubscriptionId,
+      },
+      data,
+    });
+    return updated;
+  }
+
+  async findByStripeSubscriptionId(
+    client: PrismaClientOrTx,
+    stripeSubscriptionId: string,
+  ): Promise<Subscription | null> {
+    const data = await client.subscription.findUnique({
+      where: {
+        stripe_subscription_id: stripeSubscriptionId,
+      },
+    });
     return data || null;
   }
 }
