@@ -36,6 +36,6 @@ export interface ICreateClinicSpecialDate {
   clinicId: string;
   specialDate: string;
   isOpen: boolean;
-  periods: Periods[];
+  periods?: Periods[];
   note?: string | null;
-}
+}

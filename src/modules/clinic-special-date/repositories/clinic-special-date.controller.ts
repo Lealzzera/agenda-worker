@@ -15,16 +15,18 @@ export async function createSpecialDateController(
     specialDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, {
       message: "Invalid day format. Expected YYYY-MM-DD.",
     }),
-    periods: z.array(
-      z.object({
-        startTime: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/, {
-          message: "Invalid time format. Expected HH:MM or HH:MM:SS.",
+    periods: z
+      .array(
+        z.object({
+          startTime: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/, {
+            message: "Invalid time format. Expected HH:MM or HH:MM:SS.",
+          }),
+          endTime: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/, {
+            message: "Invalid time format. Expected HH:MM or HH:MM:SS.",
+          }),
         }),
-        endTime: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/, {
-          message: "Invalid time format. Expected HH:MM or HH:MM:SS.",
-        }),
-      }),
-    ),
+      )
+      .optional(),
   });
 
   const { clinicId, specialDate, isOpen, periods, note } =

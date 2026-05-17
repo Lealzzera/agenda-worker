@@ -8,8 +8,24 @@ export class ClinicSpecialDateRepository implements IClinicSpecialDateRepository
     clinicId: string,
     data: Omit<ICreateClinicSpecialDate, "clinicId">,
   ): Promise<void> {
+    const hasPeriods = data.periods && data.periods.length > 0;
+
+    if (!data.isOpen || !hasPeriods) {
+      await client.clinicSpecialDate.create({
+        data: {
+          clinic_id: clinicId,
+          date: data.specialDate,
+          is_open: data.isOpen,
+          start_time: null,
+          end_time: null,
+          note: data.note || null,
+        },
+      });
+      return;
+    }
+
     await client.clinicSpecialDate.createMany({
-      data: data.periods.map((period) => ({
+      data: data.periods!.map((period) => ({
         clinic_id: clinicId,
         date: data.specialDate,
         is_open: data.isOpen,

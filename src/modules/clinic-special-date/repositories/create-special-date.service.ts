@@ -40,64 +40,76 @@ export class CreateSpecialDateService {
       throw new BadRequestError("Invalid special date.");
     }
 
-    for (const period of periods) {
-      const [startHour, startMinute] = period.startTime.split(":").map(Number);
+    const hasPeriods = periods && periods.length > 0;
 
-      const [endHour, endMinute] = period.endTime.split(":").map(Number);
-
-      const isValidStartTime =
-        startHour >= 0 &&
-        startHour <= 23 &&
-        startMinute >= 0 &&
-        startMinute <= 59;
-
-      const isValidEndTime =
-        endHour >= 0 && endHour <= 23 && endMinute >= 0 && endMinute <= 59;
-
-      if (!isValidStartTime) {
-        throw new BadRequestError(`Invalid start time: ${period.startTime}`);
-      }
-
-      if (!isValidEndTime) {
-        throw new BadRequestError(`Invalid end time: ${period.endTime}`);
-      }
-
-      const startTimeInMinutes = startHour * 60 + startMinute;
-
-      const endTimeInMinutes = endHour * 60 + endMinute;
-
-      if (endTimeInMinutes <= startTimeInMinutes) {
-        throw new BadRequestError(
-          `End time must be greater than start time. Period: ${period.startTime} - ${period.endTime}`,
-        );
-      }
+    if (isOpen && !hasPeriods) {
+      throw new BadRequestError(
+        "At least one period is required when the clinic is open on a special date.",
+      );
     }
 
-    const sortedPeriods = [...periods].sort((a, b) => {
-      const [aHour, aMinute] = a.startTime.split(":").map(Number);
-      const [bHour, bMinute] = b.startTime.split(":").map(Number);
+    if (isOpen && hasPeriods) {
+      for (const period of periods!) {
+        const [startHour, startMinute] = period.startTime
+          .split(":")
+          .map(Number);
 
-      return aHour * 60 + aMinute - (bHour * 60 + bMinute);
-    });
+        const [endHour, endMinute] = period.endTime.split(":").map(Number);
 
-    for (let i = 0; i < sortedPeriods.length - 1; i++) {
-      const currentPeriod = sortedPeriods[i];
-      const nextPeriod = sortedPeriods[i + 1];
+        const isValidStartTime =
+          startHour >= 0 &&
+          startHour <= 23 &&
+          startMinute >= 0 &&
+          startMinute <= 59;
 
-      const [currentEndHour, currentEndMinute] = currentPeriod.endTime
-        .split(":")
-        .map(Number);
+        const isValidEndTime =
+          endHour >= 0 && endHour <= 23 && endMinute >= 0 && endMinute <= 59;
 
-      const [nextStartHour, nextStartMinute] = nextPeriod.startTime
-        .split(":")
-        .map(Number);
+        if (!isValidStartTime) {
+          throw new BadRequestError(`Invalid start time: ${period.startTime}`);
+        }
 
-      const currentEndInMinutes = currentEndHour * 60 + currentEndMinute;
+        if (!isValidEndTime) {
+          throw new BadRequestError(`Invalid end time: ${period.endTime}`);
+        }
 
-      const nextStartInMinutes = nextStartHour * 60 + nextStartMinute;
+        const startTimeInMinutes = startHour * 60 + startMinute;
 
-      if (nextStartInMinutes < currentEndInMinutes) {
-        throw new BadRequestError("Periods cannot overlap.");
+        const endTimeInMinutes = endHour * 60 + endMinute;
+
+        if (endTimeInMinutes <= startTimeInMinutes) {
+          throw new BadRequestError(
+            `End time must be greater than start time. Period: ${period.startTime} - ${period.endTime}`,
+          );
+        }
+      }
+
+      const sortedPeriods = [...periods!].sort((a, b) => {
+        const [aHour, aMinute] = a.startTime.split(":").map(Number);
+        const [bHour, bMinute] = b.startTime.split(":").map(Number);
+
+        return aHour * 60 + aMinute - (bHour * 60 + bMinute);
+      });
+
+      for (let i = 0; i < sortedPeriods.length - 1; i++) {
+        const currentPeriod = sortedPeriods[i];
+        const nextPeriod = sortedPeriods[i + 1];
+
+        const [currentEndHour, currentEndMinute] = currentPeriod.endTime
+          .split(":")
+          .map(Number);
+
+        const [nextStartHour, nextStartMinute] = nextPeriod.startTime
+          .split(":")
+          .map(Number);
+
+        const currentEndInMinutes = currentEndHour * 60 + currentEndMinute;
+
+        const nextStartInMinutes = nextStartHour * 60 + nextStartMinute;
+
+        if (nextStartInMinutes < currentEndInMinutes) {
+          throw new BadRequestError("Periods cannot overlap.");
+        }
       }
     }
 
