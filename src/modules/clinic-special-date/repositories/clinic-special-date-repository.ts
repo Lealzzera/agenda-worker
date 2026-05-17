@@ -1,5 +1,6 @@
 import { PrismaClientOrTx } from "@/types/prisma.type";
 import { ICreateClinicSpecialDate } from "@/types/types";
+import { ClinicSpecialDate } from "@prisma/client";
 import { IClinicSpecialDateRepository } from "./clinic-special-date-repository.interface";
 
 export class ClinicSpecialDateRepository implements IClinicSpecialDateRepository {
@@ -40,7 +41,7 @@ export class ClinicSpecialDateRepository implements IClinicSpecialDateRepository
     client: PrismaClientOrTx,
     clinicId: string,
     date: string,
-  ): Promise<any[]> {
+  ): Promise<ClinicSpecialDate[]> {
     const result = await client.clinicSpecialDate.findMany({
       where: {
         clinic_id: clinicId,
@@ -48,5 +49,33 @@ export class ClinicSpecialDateRepository implements IClinicSpecialDateRepository
       },
     });
     return result;
+  }
+
+  async findManyByClinicId(
+    client: PrismaClientOrTx,
+    clinicId: string,
+  ): Promise<ClinicSpecialDate[]> {
+    const result = await client.clinicSpecialDate.findMany({
+      where: {
+        clinic_id: clinicId,
+      },
+      orderBy: {
+        date: "asc",
+      },
+    });
+    return result;
+  }
+
+  async deleteManyByClinicIdAndDate(
+    client: PrismaClientOrTx,
+    clinicId: string,
+    date: string,
+  ): Promise<void> {
+    await client.clinicSpecialDate.deleteMany({
+      where: {
+        clinic_id: clinicId,
+        date,
+      },
+    });
   }
 }

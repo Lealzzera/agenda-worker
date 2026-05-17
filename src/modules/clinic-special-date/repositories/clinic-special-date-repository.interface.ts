@@ -13,4 +13,13 @@ export interface IClinicSpecialDateRepository {
     clinicId: string,
     date: string,
   ): Promise<ClinicSpecialDate[]>;
+  findManyByClinicId(
+    client: PrismaClientOrTx,
+    clinicId: string,
+  ): Promise<ClinicSpecialDate[]>;
+  deleteManyByClinicIdAndDate(
+    client: PrismaClientOrTx,
+    clinicId: string,
+    date: string,
+  ): Promise<void>;
 }
