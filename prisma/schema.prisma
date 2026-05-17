@@ -77,6 +77,7 @@ model Appointments {
   service_id String?
   service ClinicService? @relation(fields: [service_id], references: [id], onDelete: SetNull)
   customer_phone_number String
+  customer_name String?
   appointment_date DateTime
   status AppointmentStatus @default(PENDING)
   notes String?

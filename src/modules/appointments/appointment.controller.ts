@@ -9,6 +9,9 @@ export async function createAppointmentController(
   const createAppointmentBodySchema = z.object({
     clinicId: z.uuid(),
     customerPhoneNumber: z.string().min(11),
+    customerName: z.string().min(1, {
+      message: "Customer name is required.",
+    }),
     appointmentDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, {
       message: "Invalid day format. Expected YYYY-MM-DD.",
     }),
@@ -24,6 +27,7 @@ export async function createAppointmentController(
   const {
     clinicId,
     customerPhoneNumber,
+    customerName,
     appointmentDate,
     time,
     notes,
@@ -34,6 +38,7 @@ export async function createAppointmentController(
   const { appointment } = await createAppointmentService.exec({
     clinicId,
     customerPhoneNumber,
+    customerName,
     appointmentDate,
     time,
     notes,

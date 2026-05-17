@@ -3,12 +3,13 @@ import { IAppointmentRepository, ICreateAppointment } from "./appointment-reposi
 import { Appointments, AppointmentStatus } from "@prisma/client";
 
 export class AppointmentRepository implements IAppointmentRepository {
-    async create(client: PrismaClientOrTx, { appointmentDate, clinicId, customerPhoneNumber, status, notes, serviceId }: ICreateAppointment): Promise<Appointments> {
+    async create(client: PrismaClientOrTx, { appointmentDate, clinicId, customerPhoneNumber, customerName, status, notes, serviceId }: ICreateAppointment): Promise<Appointments> {
         const appointment = await client.appointments.create({
             data: {
                 appointment_date: appointmentDate,
                 clinic_id: clinicId,
                 customer_phone_number: customerPhoneNumber,
+                customer_name: customerName,
                 status,
                 notes,
                 service_id: serviceId

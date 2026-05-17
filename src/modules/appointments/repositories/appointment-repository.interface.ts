@@ -5,12 +5,13 @@ export interface ICreateAppointment {
     clinicId: string
     serviceId?: string
     customerPhoneNumber: string
+    customerName: string
     appointmentDate: Date
     status: AppointmentStatus
     notes?: string
 }
 
 export interface IAppointmentRepository {
-    create(client: PrismaClientOrTx, { clinicId, serviceId, customerPhoneNumber, appointmentDate, status, notes }: ICreateAppointment): Promise<Appointments>
+    create(client: PrismaClientOrTx, { clinicId, serviceId, customerPhoneNumber, customerName, appointmentDate, status, notes }: ICreateAppointment): Promise<Appointments>
     countByClinicAndDate(client: PrismaClientOrTx, clinicId: string, appointmentDate: Date): Promise<number>
 }
