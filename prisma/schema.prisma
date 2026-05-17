@@ -110,7 +110,7 @@ model ClinicSpecialDate {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  @@unique([clinic_id, date])
+  @@unique([clinic_id, date, start_time, end_time])
   @@index([clinic_id, date])
   @@map("clinic_special_dates")
 }
