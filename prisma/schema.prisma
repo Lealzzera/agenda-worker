@@ -38,6 +38,7 @@ model Clinic {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
   members ClinicMember[]
+  stripe_customer_id String? @unique
   subscriptions Subscription[]
   clinic_settings ClinicSettings?
   working_hours ClinicWorkingHour[]
@@ -47,6 +48,7 @@ model Clinic {
   whatsapp_session WhatsAppSession?
 
   @@index([status])
+  @@index([stripe_customer_id])
   @@map("clinics")
 }
 
@@ -187,9 +189,9 @@ model Subscription {
   clinic Clinic @relation(fields: [clinic_id], references: [id])
   plan_id String
   plan Plan @relation(fields: [plan_id], references: [id])
-  stripe_customer_id String?
   stripe_subscription_id String? @unique
   stripe_checkout_session_id String? @unique
+  last_stripe_invoice_id String?
   status SubscriptionStatus
   trial_ends_at DateTime?
   current_period_start DateTime?
@@ -201,7 +203,6 @@ model Subscription {
   @@index([clinic_id])
   @@index([clinic_id, status])
   @@index([plan_id])
-  @@index([stripe_customer_id])
   @@map("subscriptions")
 }
 

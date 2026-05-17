@@ -8,8 +8,17 @@ import { IClinicWorkingHourRepository } from "@/modules/clinic-working-hour/repo
 import { IClinicRepository } from "@/modules/clinics/repositories/clinic-repository.interface";
 import { ISubscriptionRepository } from "@/modules/subscription/repositories/subscription-repository.interface";
 import { IUserRepository } from "@/modules/user/repositories/user-repository.interface";
-import { IServiceInput, ISettingsInput, IWorkingHourInput } from "@/types/types";
-import { ClinicRole, ClinicType, MemberStatus, SubscriptionStatus } from "@prisma/client";
+import {
+  IServiceInput,
+  ISettingsInput,
+  IWorkingHourInput,
+} from "@/types/types";
+import {
+  ClinicRole,
+  ClinicType,
+  MemberStatus,
+  SubscriptionStatus,
+} from "@prisma/client";
 import { hash } from "bcrypt";
 import { randomUUID } from "crypto";
 import { IPlanRepository } from "../plan/repositories/plan-repository.interface";
@@ -17,8 +26,6 @@ import { IPlanRepository } from "../plan/repositories/plan-repository.interface"
 interface IRegisterClinicRequest {
   userFullName: string;
   userEmail: string;
-  // Passa password OU passwordHash — nunca os dois.
-  // O webhook usa passwordHash (já hashado no draft), o controller direto usa password.
   password?: string;
   passwordHash?: string;
   userPictureUrl?: string;
@@ -35,6 +42,10 @@ interface IRegisterClinicRequest {
   workingHours?: IWorkingHourInput[];
   services?: IServiceInput[];
   settings?: ISettingsInput;
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
+  stripeCheckoutSessionId?: string;
+  lastStripeInvoiceId?: string;
 }
 
 export class RegisterClinicService {
@@ -68,6 +79,10 @@ export class RegisterClinicService {
     workingHours,
     services,
     settings,
+    stripeCustomerId,
+    stripeSubscriptionId,
+    stripeCheckoutSessionId,
+    lastStripeInvoiceId,
   }: IRegisterClinicRequest): Promise<{ userId: string; clinicId: string }> {
     if (!password && !preHashedPassword) {
       throw new BadRequestError("Password or passwordHash is required.");
@@ -76,12 +91,18 @@ export class RegisterClinicService {
       throw new BadRequestError("Password must be at least 8 characters long.");
     }
 
-    const doesTheUserExist = await this.userRepository.findByEmail(prisma, userEmail);
+    const doesTheUserExist = await this.userRepository.findByEmail(
+      prisma,
+      userEmail,
+    );
     if (doesTheUserExist) {
       throw new ConflictError("Email provided already exists.");
     }
 
-    const doesThePlanExist = await this.planRepository.findPlanById(prisma, planId);
+    const doesThePlanExist = await this.planRepository.findPlanById(
+      prisma,
+      planId,
+    );
     if (!doesThePlanExist) {
       throw new BadRequestError("Plan id provided not found.");
     }
@@ -89,11 +110,12 @@ export class RegisterClinicService {
     const baseClinicSlug = clinicName.toLowerCase().replace(/[^a-z0-9-]/g, "-");
     const clinicSlug = baseClinicSlug.concat("-" + randomUUID().slice(0, 6));
 
-    // Usa o hash pré-computado (vindo do draft) ou gera agora
-    const passwordHash = preHashedPassword ?? await hash(password!, 6);
+    const passwordHash = preHashedPassword ?? (await hash(password!, 6));
 
     const trialEndsDate = new Date();
-    trialEndsDate.setDate(trialEndsDate.getDate() + doesThePlanExist.trial_days);
+    trialEndsDate.setDate(
+      trialEndsDate.getDate() + doesThePlanExist.trial_days,
+    );
     const currentPeriodStart = new Date();
 
     const result = await prisma.$transaction(async (tx) => {
@@ -115,6 +137,7 @@ export class RegisterClinicService {
         email: clinicEmail,
         phone,
         state,
+        stripeCustomerId,
       });
 
       await this.clinicMemberRepository.create(tx, {
@@ -131,6 +154,9 @@ export class RegisterClinicService {
         trialEndsAt: trialEndsDate,
         currentPeriodStart,
         currentPeriodEnd: trialEndsDate,
+        stripeSubscriptionId,
+        stripeCheckoutSessionId,
+        lastStripeInvoiceId,
       });
 
       if (settings) {
@@ -144,7 +170,11 @@ export class RegisterClinicService {
       }
 
       if (workingHours?.length) {
-        await this.clinicWorkingHourRepository.createMany(tx, clinic.id, workingHours);
+        await this.clinicWorkingHourRepository.createMany(
+          tx,
+          clinic.id,
+          workingHours,
+        );
       }
 
       if (services?.length) {

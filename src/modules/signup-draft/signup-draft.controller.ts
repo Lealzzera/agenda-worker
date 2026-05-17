@@ -55,7 +55,5 @@ export async function signupDraftController(
     data,
     status,
   });
-
-  // Retorna o draftId para o frontend usar na criação do checkout Stripe
   return res.status(201).send({ draftId: draft.id });
 }
