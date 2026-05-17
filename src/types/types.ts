@@ -16,3 +16,26 @@ export interface ISettingsInput {
   chargesEvaluation?: boolean;
   evaluationPriceCents?: number;
 }
+
+export const WEEKDAY_BY_INDEX: Weekday[] = [
+  Weekday.SUNDAY,
+  Weekday.MONDAY,
+  Weekday.TUESDAY,
+  Weekday.WEDNESDAY,
+  Weekday.THURSDAY,
+  Weekday.FRIDAY,
+  Weekday.SATURDAY,
+];
+
+export type Periods = {
+  startTime: string;
+  endTime: string;
+};
+
+export interface ICreateClinicSpecialDate {
+  clinicId: string;
+  specialDate: string;
+  isOpen: boolean;
+  periods: Periods[];
+  note?: string | null;
+}
