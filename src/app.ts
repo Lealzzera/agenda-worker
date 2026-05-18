@@ -1,6 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { appointmentRoutes } from "./modules/appointments/appointment.routes";
 import { authRoutes } from "./modules/auth/auth.routes";
+import { clinicSettingsRoutes } from "./modules/clinic-settings/clinic-settings.routes";
 import { clinicSpecialDateRoutes } from "./modules/clinic-special-date/repositories/clinic-special-date.routes";
 import { clinicRoutes } from "./modules/clinics/clinic.routes";
 import { planRoutes } from "./modules/plan/plan.routes";
@@ -21,4 +22,5 @@ export default async function routes(app: FastifyInstance) {
   app.register(whatsappRoutes, { prefix: "/whatsapp" });
   app.register(realtimeRoutes, { prefix: "/realtime" });
   app.register(clinicSpecialDateRoutes, { prefix: "/clinic-special-date" });
+  app.register(clinicSettingsRoutes, { prefix: "/clinic-settings" });
 }
