@@ -1,6 +1,7 @@
 import { prisma } from "@/db/prisma";
 import { NotFoundError } from "@/errors/not-found.error";
 import { IClinicRepository } from "@/modules/clinics/repositories/clinic-repository.interface";
+import { ClinicType } from "@prisma/client";
 import { IClinicSettingsRepository } from "./repositories/clinic-settings-repository.interface";
 
 interface IListClinicSettingsRequest {
@@ -8,6 +9,12 @@ interface IListClinicSettingsRequest {
 }
 
 interface IListClinicSettingsResponse {
+  clinicName: string;
+  clinicType: ClinicType;
+  address: string | null;
+  postalCode: string | null;
+  city: string | null;
+  state: string | null;
   chargesEvaluation: boolean;
   evaluationPriceCents: number | null;
   maxAppointmentsPerSlot: number | null;
@@ -15,7 +22,6 @@ interface IListClinicSettingsResponse {
   allowRescheduling: boolean;
   allowCancellation: boolean;
   aiAgentName: string | null;
-  clinicName: string;
 }
 
 export class ListClinicSettingsService {
@@ -47,6 +53,11 @@ export class ListClinicSettingsService {
 
     return {
       clinicName: doesTheClinicExists.name,
+      clinicType: doesTheClinicExists.type,
+      address: doesTheClinicExists.address,
+      postalCode: doesTheClinicExists.postal_code,
+      city: doesTheClinicExists.city,
+      state: doesTheClinicExists.state,
       chargesEvaluation: clinicSettings.charges_evaluation,
       evaluationPriceCents: clinicSettings.evaluation_price_cents,
       maxAppointmentsPerSlot: clinicSettings.max_appointments_per_slot,
