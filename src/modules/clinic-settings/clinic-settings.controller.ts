@@ -3,6 +3,14 @@ import z from "zod";
 import makeListClinicSettingsServiceFactory from "./factories/make-list-clinic-settings-service.factory";
 import makeUpdateClinicSettingsServiceFactory from "./factories/make-update-clinic-settings-service.factory";
 
+const clinicTypeSchema = z.enum([
+  "DENTAL",
+  "MEDICAL",
+  "AESTHETIC",
+  "PSYCHOLOGY",
+  "OTHER",
+]);
+
 export async function listClinicSettingsController(
   req: FastifyRequest,
   res: FastifyReply,
@@ -28,13 +36,11 @@ export async function updateClinicSettingsController(
     allowCancellation: z.boolean(),
     aiAgentName: z.string(),
     clinicName: z.string().optional(),
+    clinicType: clinicTypeSchema.optional(),
     address: z.string().nullable().optional(),
     postalCode: z.string().nullable().optional(),
     city: z.string().nullable().optional(),
     state: z.string().nullable().optional(),
-    clinicType: z
-      .enum(["DENTAL", "AESTHETIC", "MEDICAL", "OTHER", "PSYCHOLOGY"])
-      .optional(),
   });
 
   const { clinicId } = req.params as { clinicId: string };
@@ -48,11 +54,11 @@ export async function updateClinicSettingsController(
     allowCancellation,
     aiAgentName,
     clinicName,
+    clinicType,
     address,
     postalCode,
     city,
     state,
-    clinicType,
   } = updateClinicSettingsBodySchema.parse(req.body);
 
   const updateClinicSettingsService = makeUpdateClinicSettingsServiceFactory();
@@ -66,9 +72,9 @@ export async function updateClinicSettingsController(
     evaluationPriceCents,
     maxAppointmentsPerSlot,
     clinicName,
+    clinicType,
     address,
     postalCode,
-    clinicType,
     city,
     state,
   });

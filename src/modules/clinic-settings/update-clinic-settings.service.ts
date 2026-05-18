@@ -1,5 +1,4 @@
 import { prisma } from "@/db/prisma";
-import { BadRequestError } from "@/errors/bad-request.error";
 import { NotFoundError } from "@/errors/not-found.error";
 import { IClinicRepository } from "@/modules/clinics/repositories/clinic-repository.interface";
 import { ClinicSettings, ClinicType } from "@prisma/client";
@@ -11,11 +10,11 @@ import {
 interface IUpdateClinicSettingsRequest extends UpdateClinicSettings {
   clinicId: string;
   clinicName?: string;
+  clinicType?: ClinicType;
   address?: string | null;
   postalCode?: string | null;
   city?: string | null;
   state?: string | null;
-  clinicType?: ClinicType;
 }
 
 interface IUpdateClinicSettingsResponse {
@@ -38,11 +37,11 @@ export class UpdateClinicSettingsService {
     allowCancellation,
     aiAgentName,
     clinicName,
+    clinicType,
     address,
     postalCode,
     city,
     state,
-    clinicType,
   }: IUpdateClinicSettingsRequest): Promise<IUpdateClinicSettingsResponse> {
     const doesTheClinicExists = await this.clinicRepository.findById(
       prisma,
@@ -62,26 +61,16 @@ export class UpdateClinicSettingsService {
 
     const hasClinicBasicDataToUpdate =
       clinicName !== undefined ||
+      clinicType !== undefined ||
       address !== undefined ||
       postalCode !== undefined ||
       city !== undefined ||
-      state !== undefined ||
-      clinicType !== undefined;
-
-    if (
-      clinicType !== undefined &&
-      clinicType !== "DENTAL" &&
-      clinicType !== "AESTHETIC" &&
-      clinicType !== "MEDICAL" &&
-      clinicType !== "OTHER" &&
-      clinicType !== "PSYCHOLOGY"
-    ) {
-      throw new BadRequestError("Invalid clinic type");
-    }
+      state !== undefined;
 
     if (hasClinicBasicDataToUpdate) {
       await this.clinicRepository.updateClinic(prisma, clinicId, {
         ...(clinicName !== undefined && { name: clinicName }),
+        ...(clinicType !== undefined && { type: clinicType }),
         ...(address !== undefined && { address }),
         ...(postalCode !== undefined && { postal_code: postalCode }),
         ...(city !== undefined && { city }),

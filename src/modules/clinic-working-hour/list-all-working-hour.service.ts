@@ -26,6 +26,14 @@ export class ListAllWorkingHourService {
         prisma,
         clinicId,
       );
-    return { clinicWorkingHour: workingHours };
+
+    const clinicWorkingHourMapped = workingHours.map((hourObject) => {
+      return {
+        weekday: hourObject.weekday,
+        startTime: hourObject.start_time,
+        endTime: hourObject.end_time,
+      };
+    });
+    return { clinicWorkingHour: clinicWorkingHourMapped };
   }
 }
