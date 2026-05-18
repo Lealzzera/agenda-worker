@@ -19,7 +19,7 @@ export async function updateClinicSettingsController(
   req: FastifyRequest,
   res: FastifyReply,
 ) {
-  const updateClinicSettinsBodySchema = z.object({
+  const updateClinicSettingsBodySchema = z.object({
     chargesEvaluation: z.boolean(),
     evaluationPriceCents: z.number(),
     maxAppointmentsPerSlot: z.number(),
@@ -27,6 +27,14 @@ export async function updateClinicSettingsController(
     allowRescheduling: z.boolean(),
     allowCancellation: z.boolean(),
     aiAgentName: z.string(),
+    clinicName: z.string().optional(),
+    address: z.string().nullable().optional(),
+    postalCode: z.string().nullable().optional(),
+    city: z.string().nullable().optional(),
+    state: z.string().nullable().optional(),
+    clinicType: z
+      .enum(["DENTAL", "AESTHETIC", "MEDICAL", "OTHER", "PSYCHOLOGY"])
+      .optional(),
   });
 
   const { clinicId } = req.params as { clinicId: string };
@@ -39,7 +47,13 @@ export async function updateClinicSettingsController(
     allowRescheduling,
     allowCancellation,
     aiAgentName,
-  } = updateClinicSettinsBodySchema.parse(req.body);
+    clinicName,
+    address,
+    postalCode,
+    city,
+    state,
+    clinicType,
+  } = updateClinicSettingsBodySchema.parse(req.body);
 
   const updateClinicSettingsService = makeUpdateClinicSettingsServiceFactory();
   const clinicSettings = await updateClinicSettingsService.exec({
@@ -51,6 +65,12 @@ export async function updateClinicSettingsController(
     chargesEvaluation,
     evaluationPriceCents,
     maxAppointmentsPerSlot,
+    clinicName,
+    address,
+    postalCode,
+    clinicType,
+    city,
+    state,
   });
 
   return res.status(200).send(clinicSettings);
