@@ -1,7 +1,6 @@
 import { prisma } from "@/db/prisma";
 import { NotFoundError } from "@/errors/not-found.error";
 import { IClinicRepository } from "@/modules/clinics/repositories/clinic-repository.interface";
-import { ClinicSettings } from "@prisma/client";
 import { IClinicSettingsRepository } from "./repositories/clinic-settings-repository.interface";
 
 interface IListClinicSettingsRequest {
@@ -9,7 +8,14 @@ interface IListClinicSettingsRequest {
 }
 
 interface IListClinicSettingsResponse {
-  clinicSettings: ClinicSettings;
+  chargesEvaluation: boolean;
+  evaluationPriceCents: number | null;
+  maxAppointmentsPerSlot: number | null;
+  appointmentDurationMinutes: number | null;
+  allowRescheduling: boolean;
+  allowCancellation: boolean;
+  aiAgentName: string | null;
+  clinicName: string;
 }
 
 export class ListClinicSettingsService {
@@ -30,13 +36,24 @@ export class ListClinicSettingsService {
       throw new NotFoundError("Clinic not found");
     }
 
-    const clinicSettings =
-      await this.clinicSettingsRepository.findByClinicId(prisma, clinicId);
+    const clinicSettings = await this.clinicSettingsRepository.findByClinicId(
+      prisma,
+      clinicId,
+    );
 
     if (!clinicSettings) {
       throw new NotFoundError("Clinic settings not found for this clinic.");
     }
 
-    return { clinicSettings };
+    return {
+      clinicName: doesTheClinicExists.name,
+      chargesEvaluation: clinicSettings.charges_evaluation,
+      evaluationPriceCents: clinicSettings.evaluation_price_cents,
+      maxAppointmentsPerSlot: clinicSettings.max_appointments_per_slot,
+      appointmentDurationMinutes: clinicSettings.appointment_duration_minutes,
+      allowRescheduling: clinicSettings.allow_rescheduling,
+      allowCancellation: clinicSettings.allow_cancellation,
+      aiAgentName: clinicSettings.ai_agent_name,
+    };
   }
 }
