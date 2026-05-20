@@ -94,6 +94,33 @@ export async function postQrCodeController(
               fullSync: true,
             },
           },
+          webhooks: [
+            {
+              url: env.WAHA_WEBHOOK_URL,
+              events: [
+                "message.any",
+                "session.status",
+                "message.ack",
+                "message.reaction",
+                "presence.update",
+                "message.waiting",
+              ],
+              hmac: {
+                key: env.WAHA_WEBHOOK_SECRET,
+              },
+              retries: {
+                delaySeconds: 2,
+                attempts: 5,
+                policy: "linear",
+              },
+              customHeaders: [
+                {
+                  name: "X-Request-ID",
+                  value: "123",
+                },
+              ],
+            },
+          ],
         },
       }),
     });
@@ -148,6 +175,7 @@ export async function postQrCodeController(
 
     return { qrCode: imageUrl };
   } catch (error) {
+    console.log(error);
     console.error(error);
     return res.status(500).send({ error: "Internal server error" });
   }
