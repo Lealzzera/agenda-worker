@@ -1,5 +1,5 @@
 import { env } from "@/env";
-import { WahaMessagePayload } from "@/types/types";
+import { WahaMessageAckPayload, WahaMessagePayload } from "@/types/types";
 import { FastifyReply, FastifyRequest } from "fastify";
 import crypto from "node:crypto";
 import { broadcastToClinic } from "../realtime/realtime-broadcaster";
@@ -64,25 +64,111 @@ async function resolvePhoneChatId(sessionName: string, chatId: string) {
   }
 }
 
+async function getWahaContact(sessionName: string, contactId: string) {
+  try {
+    const params = new URLSearchParams({
+      contactId,
+      session: sessionName,
+    });
+    const response = await fetch(`${env.WAHA_URL}/contacts?${params.toString()}`, {
+      headers: {
+        "X-Api-Key": env.WAHA_API_KEY,
+      },
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return (await response.json()) as {
+      name?: string | null;
+      pushname?: string | null;
+      shortName?: string | null;
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function getWahaContactPicture(sessionName: string, contactId: string) {
+  try {
+    const params = new URLSearchParams({
+      contactId,
+      session: sessionName,
+    });
+    const response = await fetch(
+      `${env.WAHA_URL}/contacts/profile-picture?${params.toString()}`,
+      {
+        headers: {
+          "X-Api-Key": env.WAHA_API_KEY,
+        },
+      },
+    );
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const result = (await response.json()) as {
+      profilePictureURL?: string | null;
+    };
+
+    return result.profilePictureURL ?? null;
+  } catch {
+    return null;
+  }
+}
+
 async function formatMessagePayload(payload: WahaMessagePayload) {
   const sourceChatId = payload.payload.fromMe
     ? payload.payload.to ?? payload.payload.chatId ?? payload.payload.from
     : payload.payload.chatId ?? payload.payload.from;
   const phoneChatId = await resolvePhoneChatId(payload.session, sourceChatId);
+  const contact = phoneChatId
+    ? await getWahaContact(payload.session, phoneChatId)
+    : null;
+  const contactPicture = phoneChatId
+    ? await getWahaContactPicture(payload.session, phoneChatId)
+    : null;
 
   return {
-    eventId: payload.id,
+    eventId: payload.payload.id ?? payload.id,
     event: payload.event,
     session: payload.session,
     sourceChatId,
     phoneChatId,
-    contactName: payload.payload.notifyName ?? null,
+    contactName:
+      contact?.name ??
+      contact?.pushname ??
+      contact?.shortName ??
+      payload.payload.notifyName ??
+      null,
+    contactPicture,
     fromMe: payload.payload.fromMe,
     hasMedia: payload.payload.hasMedia,
     message: payload.payload.hasMedia
       ? payload.payload.body || "Mensagem com arquivo de midia"
       : payload.payload.body,
     timestamp: payload.payload.timestamp,
+  };
+}
+
+async function formatMessageAckPayload(payload: WahaMessageAckPayload) {
+  const sourceChatId =
+    payload.payload.chatId ??
+    payload.payload.to ??
+    payload.payload.from;
+  const phoneChatId = await resolvePhoneChatId(payload.session, sourceChatId);
+
+  return {
+    eventId: payload.payload.id ?? payload.id,
+    event: payload.event,
+    session: payload.session,
+    sourceChatId,
+    phoneChatId,
+    ack: payload.payload.ack,
+    ackName: payload.payload.ackName ?? null,
+    fromMe: payload.payload.fromMe,
   };
 }
 
@@ -152,9 +238,12 @@ export async function wahaWebhookController(
         });
         break;
       case "message.ack":
+        const messageAckInfo = await formatMessageAckPayload(
+          body as unknown as WahaMessageAckPayload,
+        );
         broadcastToClinic(clinicId, {
           event: "message_ack",
-          payload: body,
+          payload: messageAckInfo,
         });
         break;
       case "message.reaction":

@@ -41,7 +41,7 @@ export interface ICreateClinicSpecialDate {
 }
 
 export interface WahaMessagePayload {
-  id: string;
+  id?: string;
   event: string;
   payload: {
     ack: number;
@@ -50,9 +50,26 @@ export interface WahaMessagePayload {
     from: string;
     fromMe: boolean;
     hasMedia: boolean;
+    id?: string;
     notifyName?: string;
     source: string;
     timestamp: number;
+    to?: string;
+  };
+  session: string;
+}
+
+export interface WahaMessageAckPayload {
+  id?: string;
+  event: string;
+  payload: {
+    ack: number;
+    ackName?: string;
+    chatId?: string;
+    from: string;
+    fromMe: boolean;
+    id?: string;
+    participant?: string | null;
     to?: string;
   };
   session: string;
