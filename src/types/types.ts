@@ -38,4 +38,19 @@ export interface ICreateClinicSpecialDate {
   isOpen: boolean;
   periods?: Periods[];
   note?: string | null;
-}
+}
+
+export interface WahaMessagePayload {
+  id: string;
+  event: string;
+  payload: {
+    ack: number;
+    body: string;
+    from: string;
+    fromMe: boolean;
+    hasMedia: boolean;
+    source: string;
+    timestamp: number;
+  };
+  session: string;
+}
