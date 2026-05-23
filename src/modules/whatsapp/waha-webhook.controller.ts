@@ -33,15 +33,56 @@ async function resolveClinicIdFromWebhook(body: WahaWebhookBody) {
   }
 }
 
-function formatMessagePayload(payload: WahaMessagePayload) {
+async function resolvePhoneChatId(sessionName: string, chatId: string) {
+  if (chatId.endsWith("@c.us")) {
+    return chatId;
+  }
+
+  if (!chatId.endsWith("@lid")) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(
+      `${env.WAHA_URL}/${sessionName}/lids/${encodeURIComponent(chatId)}`,
+      {
+        headers: {
+          "X-Api-Key": env.WAHA_API_KEY,
+        },
+      },
+    );
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const result = (await response.json()) as { pn?: string | null };
+
+    return result.pn ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function formatMessagePayload(payload: WahaMessagePayload) {
+  const sourceChatId = payload.payload.fromMe
+    ? payload.payload.to ?? payload.payload.chatId ?? payload.payload.from
+    : payload.payload.chatId ?? payload.payload.from;
+  const phoneChatId = await resolvePhoneChatId(payload.session, sourceChatId);
+
   return {
     eventId: payload.id,
     event: payload.event,
     session: payload.session,
-    messageData: {
-      messageBody: payload.payload.body,
-      fromMe: payload.payload.fromMe,
-    },
+    sourceChatId,
+    phoneChatId,
+    contactName: payload.payload.notifyName ?? null,
+    fromMe: payload.payload.fromMe,
+    hasMedia: payload.payload.hasMedia,
+    message: payload.payload.hasMedia
+      ? payload.payload.body || "Mensagem com arquivo de midia"
+      : payload.payload.body,
+    timestamp: payload.payload.timestamp,
   };
 }
 
@@ -102,7 +143,7 @@ export async function wahaWebhookController(
         });
         break;
       case "message.any":
-        const messageInfo = formatMessagePayload(
+        const messageInfo = await formatMessagePayload(
           body as unknown as WahaMessagePayload,
         );
         broadcastToClinic(clinicId, {

@@ -46,11 +46,14 @@ export interface WahaMessagePayload {
   payload: {
     ack: number;
     body: string;
+    chatId?: string;
     from: string;
     fromMe: boolean;
     hasMedia: boolean;
+    notifyName?: string;
     source: string;
     timestamp: number;
+    to?: string;
   };
   session: string;
 }
