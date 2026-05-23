@@ -18,6 +18,7 @@ export interface IClinicWorkingHourRepository {
     clinicId: string,
     data: Omit<ICreateWorkingHour, "clinicId">[],
   ): Promise<void>;
+  deleteManyByClinicId(client: PrismaClientOrTx, clinicId: string): Promise<void>;
   findByClinicIdAndWeekday(
     client: PrismaClientOrTx,
     clinicId: string,

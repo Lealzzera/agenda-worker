@@ -26,6 +26,8 @@ export class ClinicWorkingHourRepository implements IClinicWorkingHourRepository
     clinicId: string,
     data: Omit<ICreateWorkingHour, "clinicId">[],
   ): Promise<void> {
+    if (data.length === 0) return;
+
     await client.clinicWorkingHour.createMany({
       data: data.map(({ weekday, startTime, endTime }) => ({
         clinic_id: clinicId,
@@ -33,6 +35,17 @@ export class ClinicWorkingHourRepository implements IClinicWorkingHourRepository
         start_time: startTime,
         end_time: endTime,
       })),
+    });
+  }
+
+  async deleteManyByClinicId(
+    client: PrismaClientOrTx,
+    clinicId: string,
+  ): Promise<void> {
+    await client.clinicWorkingHour.deleteMany({
+      where: {
+        clinic_id: clinicId,
+      },
     });
   }
 
