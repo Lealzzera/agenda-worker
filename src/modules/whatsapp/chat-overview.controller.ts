@@ -2,6 +2,36 @@ import { env } from "@/env";
 import { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 
+function getUnreadCount(chat: any) {
+  const unreadCount =
+    chat.unreadCount ??
+    chat.unread_count ??
+    chat._chat?.unreadCount ??
+    chat._chat?.unread_count ??
+    0;
+
+  return Number(unreadCount) || 0;
+}
+
+function getLastMessageAck(chat: any) {
+  const ack =
+    chat.lastMessage?.ack ??
+    chat.lastMessage?._data?.ack ??
+    chat.lastMessage?.metadata?.ack ??
+    null;
+
+  return ack === null ? null : Number(ack);
+}
+
+function getLastMessageFromMe(chat: any) {
+  return Boolean(
+    chat.lastMessage?.fromMe ??
+      chat.lastMessage?._data?.fromMe ??
+      chat.lastMessage?.metadata?.fromMe ??
+      false,
+  );
+}
+
 export async function chatOverviewController(
   req: FastifyRequest,
   res: FastifyReply,
@@ -58,7 +88,10 @@ export async function chatOverviewController(
             : chat.lastMessage?.body,
           hasMedia: chat.lastMessage?.hasMedia,
           sentAt: chat.lastMessage?.timestamp,
+          ack: getLastMessageAck(chat),
+          fromMe: getLastMessageFromMe(chat),
         },
+        unreadCount: getUnreadCount(chat),
       };
     });
 
