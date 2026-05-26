@@ -61,6 +61,7 @@ export async function getChatMessagesController(
     );
 
     const data = await response.json();
+    console.log(data);
     const messagesMapped = (Array.isArray(data) ? data : []).map(
       (message: any) => ({
         id: message.id,
@@ -69,6 +70,7 @@ export async function getChatMessagesController(
         fromMe: message.fromMe,
         source: message.source,
         hasMedia: message.hasMedia,
+        ack: message.ack,
       }),
     );
 
