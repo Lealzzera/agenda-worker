@@ -15,7 +15,6 @@ export interface RefreshTokenPayload {
 }
 
 const activeAccessTokenJtiByUser = new Map<string, string>();
-const activeRefreshTokenJtiByUser = new Map<string, string>();
 
 type SignAccessTokenPayload = Omit<AccessTokenPayload, "jti">;
 type SignRefreshTokenPayload = Omit<RefreshTokenPayload, "jti">;
@@ -31,7 +30,6 @@ export function signAccessToken(payload: SignAccessTokenPayload) {
 
 export function signRefreshToken(payload: SignRefreshTokenPayload) {
   const tokenId = randomUUID();
-  activeRefreshTokenJtiByUser.set(payload.sub, tokenId);
 
   return jwt.sign({ ...payload, jti: tokenId }, env.JWT_SECRET, {
     expiresIn: "14d",
@@ -58,12 +56,5 @@ export function verifyActiveAccessToken(token: string) {
 }
 
 export function verifyActiveRefreshToken(token: string) {
-  const payload = verifyRefreshToken(token);
-  const activeTokenId = activeRefreshTokenJtiByUser.get(payload.sub);
-
-  if (!activeTokenId || activeTokenId !== payload.jti) {
-    throw new Error("Inactive refresh token");
-  }
-
-  return payload;
+  return verifyRefreshToken(token);
 }

@@ -3,14 +3,14 @@ import { NotFoundError } from "@/errors/not-found.error";
 import {
   signAccessToken,
   signRefreshToken,
-  verifyActiveRefreshToken,
+  verifyRefreshToken,
 } from "@/lib/jwt";
 import { IUserRepository } from "../user/repositories/user-repository.interface";
 
 export class RefreshService {
   constructor(private userRepository: IUserRepository) {}
   async exec(refreshToken: string) {
-    const decoded = verifyActiveRefreshToken(refreshToken);
+    const decoded = verifyRefreshToken(refreshToken);
     const userId = decoded.sub;
     const user = await this.userRepository.findById(prisma, userId);
 
