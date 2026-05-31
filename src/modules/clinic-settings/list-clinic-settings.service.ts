@@ -22,6 +22,7 @@ interface IListClinicSettingsResponse {
   allowRescheduling: boolean;
   allowCancellation: boolean;
   aiAgentName: string | null;
+  additionalInformation: string | null;
 }
 
 export class ListClinicSettingsService {
@@ -65,6 +66,7 @@ export class ListClinicSettingsService {
       allowRescheduling: clinicSettings.allow_rescheduling,
       allowCancellation: clinicSettings.allow_cancellation,
       aiAgentName: clinicSettings.ai_agent_name,
+      additionalInformation: clinicSettings.additional_information,
     };
   }
 }

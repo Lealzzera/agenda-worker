@@ -1,5 +1,5 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { verifyAccessToken } from "../lib/jwt";
+import { verifyActiveAccessToken } from "../lib/jwt";
 
 export async function verifyJwt(req: FastifyRequest, res: FastifyReply) {
   try {
@@ -19,7 +19,7 @@ export async function verifyJwt(req: FastifyRequest, res: FastifyReply) {
       return res.status(401).send({ message: "Unauthorized" });
     }
 
-    const payload = verifyAccessToken(token);
+    const payload = verifyActiveAccessToken(token);
 
     req.user = {
       sub: payload.sub,

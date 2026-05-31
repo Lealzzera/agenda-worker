@@ -15,6 +15,7 @@ export interface IServiceInput {
 export interface ISettingsInput {
   chargesEvaluation?: boolean;
   evaluationPriceCents?: number;
+  additionalInformation?: string | null;
 }
 
 export const WEEKDAY_BY_INDEX: Weekday[] = [

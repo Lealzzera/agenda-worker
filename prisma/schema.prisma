@@ -64,6 +64,7 @@ model ClinicSettings {
   allow_cancellation Boolean @default(true)
   timezone String @default("America/Sao_Paulo")
   ai_agent_name String @default("Aurora")
+  additional_information String?
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 

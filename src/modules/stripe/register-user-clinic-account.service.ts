@@ -26,6 +26,8 @@ type RegisterUserClinicData = {
     settings: { chargesEvaluation: boolean; evaluationPriceCents: number };
     clinicName: string;
     clinicType: string;
+    addressNumber?: string;
+    additionalInformation?: string;
     postalCode: string;
     workingHours: any[];
   };
@@ -67,7 +69,11 @@ export class RegisterUserClinicAccountService {
       postalCode: draftFromDatabase.data.postalCode,
       phone: draftFromDatabase.data.phone,
       services: draftFromDatabase.data.services,
-      settings: draftFromDatabase.data.settings,
+      settings: {
+        ...draftFromDatabase.data.settings,
+        additionalInformation:
+          draftFromDatabase.data.additionalInformation?.trim() || null,
+      },
       workingHours: draftFromDatabase.data.workingHours,
       clinicType: draftFromDatabase.data.clinicType as any,
       stripeCustomerId,

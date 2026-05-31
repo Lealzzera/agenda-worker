@@ -1,0 +1,1 @@
+-- No-op migration. The token invalidation approach no longer uses a database column.

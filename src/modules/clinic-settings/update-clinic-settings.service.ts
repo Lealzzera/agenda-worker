@@ -36,6 +36,7 @@ export class UpdateClinicSettingsService {
     allowRescheduling,
     allowCancellation,
     aiAgentName,
+    additionalInformation,
     clinicName,
     clinicType,
     address,
@@ -89,6 +90,7 @@ export class UpdateClinicSettingsService {
         allowRescheduling,
         allowCancellation,
         aiAgentName,
+        additionalInformation,
       },
     );
 

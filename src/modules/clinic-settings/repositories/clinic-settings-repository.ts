@@ -9,13 +9,19 @@ import {
 export class ClinicSettingsRepository implements IClinicSettingsRepository {
   async create(
     client: PrismaClientOrTx,
-    { clinicId, chargesEvaluation, evaluationPriceCents }: CreateClinicSettings,
+    {
+      clinicId,
+      chargesEvaluation,
+      evaluationPriceCents,
+      additionalInformation,
+    }: CreateClinicSettings,
   ): Promise<ClinicSettings> {
     const clinicSettings = await client.clinicSettings.create({
       data: {
         clinic_id: clinicId,
         charges_evaluation: chargesEvaluation,
         evaluation_price_cents: evaluationPriceCents,
+        additional_information: additionalInformation,
       },
     });
     return clinicSettings;
@@ -61,6 +67,9 @@ export class ClinicSettingsRepository implements IClinicSettingsRepository {
         }),
         ...(data.aiAgentName !== undefined && {
           ai_agent_name: data.aiAgentName,
+        }),
+        ...(data.additionalInformation !== undefined && {
+          additional_information: data.additionalInformation,
         }),
       },
     });

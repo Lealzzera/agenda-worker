@@ -5,6 +5,7 @@ export interface CreateClinicSettings {
   clinicId: string;
   chargesEvaluation: boolean;
   evaluationPriceCents?: number | null;
+  additionalInformation?: string | null;
 }
 
 export interface UpdateClinicSettings {
@@ -15,12 +16,13 @@ export interface UpdateClinicSettings {
   allowRescheduling?: boolean;
   allowCancellation?: boolean;
   aiAgentName?: string;
+  additionalInformation?: string | null;
 }
 
 export interface IClinicSettingsRepository {
   create(
     client: PrismaClientOrTx,
-    { clinicId, chargesEvaluation, evaluationPriceCents }: CreateClinicSettings,
+    data: CreateClinicSettings,
   ): Promise<ClinicSettings>;
   findByClinicId(
     client: PrismaClientOrTx,
