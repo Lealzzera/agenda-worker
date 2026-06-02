@@ -28,6 +28,16 @@ services:
     volumes:
       - waha_sessions:/app/src/sessions
 
+  redis:
+    image: redis:7-alpine
+    container_name: agenda-worker-redis
+    restart: always
+    ports:
+      - ${REDIS_PORT:-6379}:6379
+    volumes:
+      - redis_data:/data
+
 volumes:
   postgres_data:
   waha_sessions:
+  redis_data:

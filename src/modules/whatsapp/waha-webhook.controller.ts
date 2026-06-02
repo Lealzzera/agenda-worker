@@ -2,6 +2,7 @@ import { env } from "@/env";
 import { WahaMessageAckPayload, WahaMessagePayload } from "@/types/types";
 import { FastifyReply, FastifyRequest } from "fastify";
 import crypto from "node:crypto";
+import { enqueueAiReplyJob } from "../ai/ai-reply.queue";
 import { broadcastToClinic } from "../realtime/realtime-broadcaster";
 
 type WahaWebhookBody = {
@@ -14,9 +15,23 @@ type WahaWebhookBody = {
     metadata?: {
       clinicId?: string;
     };
+    _data: {
+      isGroup: boolean;
+    };
   };
   session?: string;
 };
+
+const WAHA_LOOKUP_TIMEOUT_MS = 1500;
+
+async function fetchWahaWithTimeout(url: string) {
+  return fetch(url, {
+    headers: {
+      "X-Api-Key": env.WAHA_API_KEY,
+    },
+    signal: AbortSignal.timeout(WAHA_LOOKUP_TIMEOUT_MS),
+  });
+}
 
 async function resolveClinicIdFromWebhook(body: WahaWebhookBody) {
   const clinicId =
@@ -43,13 +58,8 @@ async function resolvePhoneChatId(sessionName: string, chatId: string) {
   }
 
   try {
-    const response = await fetch(
+    const response = await fetchWahaWithTimeout(
       `${env.WAHA_URL}/${sessionName}/lids/${encodeURIComponent(chatId)}`,
-      {
-        headers: {
-          "X-Api-Key": env.WAHA_API_KEY,
-        },
-      },
     );
 
     if (!response.ok) {
@@ -70,11 +80,9 @@ async function getWahaContact(sessionName: string, contactId: string) {
       contactId,
       session: sessionName,
     });
-    const response = await fetch(`${env.WAHA_URL}/contacts?${params.toString()}`, {
-      headers: {
-        "X-Api-Key": env.WAHA_API_KEY,
-      },
-    });
+    const response = await fetchWahaWithTimeout(
+      `${env.WAHA_URL}/contacts?${params.toString()}`,
+    );
 
     if (!response.ok) {
       return null;
@@ -96,13 +104,8 @@ async function getWahaContactPicture(sessionName: string, contactId: string) {
       contactId,
       session: sessionName,
     });
-    const response = await fetch(
+    const response = await fetchWahaWithTimeout(
       `${env.WAHA_URL}/contacts/profile-picture?${params.toString()}`,
-      {
-        headers: {
-          "X-Api-Key": env.WAHA_API_KEY,
-        },
-      },
     );
 
     if (!response.ok) {
@@ -121,8 +124,8 @@ async function getWahaContactPicture(sessionName: string, contactId: string) {
 
 async function formatMessagePayload(payload: WahaMessagePayload) {
   const sourceChatId = payload.payload.fromMe
-    ? payload.payload.to ?? payload.payload.chatId ?? payload.payload.from
-    : payload.payload.chatId ?? payload.payload.from;
+    ? (payload.payload.to ?? payload.payload.chatId ?? payload.payload.from)
+    : (payload.payload.chatId ?? payload.payload.from);
   const phoneChatId = await resolvePhoneChatId(payload.session, sourceChatId);
   const contact = phoneChatId
     ? await getWahaContact(payload.session, phoneChatId)
@@ -155,9 +158,7 @@ async function formatMessagePayload(payload: WahaMessagePayload) {
 
 async function formatMessageAckPayload(payload: WahaMessageAckPayload) {
   const sourceChatId =
-    payload.payload.chatId ??
-    payload.payload.to ??
-    payload.payload.from;
+    payload.payload.chatId ?? payload.payload.to ?? payload.payload.from;
   const phoneChatId = await resolvePhoneChatId(payload.session, sourceChatId);
 
   return {
@@ -219,8 +220,11 @@ export async function wahaWebhookController(
 
   const body = req.body as WahaWebhookBody;
   const clinicId = await resolveClinicIdFromWebhook(body);
+  console.log("Body ------>", body);
+  console.log("Clinic ID ------>", clinicId);
 
   if (clinicId) {
+    console.log("Clinic ID ------>", clinicId);
     switch (body.event) {
       case "session.status":
         broadcastToClinic(clinicId, {
@@ -229,6 +233,9 @@ export async function wahaWebhookController(
         });
         break;
       case "message.any":
+        if (body.payload?._data.isGroup) {
+          return;
+        }
         const messageInfo = await formatMessagePayload(
           body as unknown as WahaMessagePayload,
         );
@@ -236,6 +243,23 @@ export async function wahaWebhookController(
           event: "message_any",
           payload: messageInfo,
         });
+        if (
+          !messageInfo.fromMe &&
+          !messageInfo.hasMedia &&
+          messageInfo.message.trim() &&
+          (messageInfo.phoneChatId || messageInfo.sourceChatId)
+        ) {
+          enqueueAiReplyJob({
+            clinicId,
+            session: messageInfo.session,
+            chatId: messageInfo.phoneChatId ?? messageInfo.sourceChatId,
+            messageId: messageInfo.eventId,
+            message: messageInfo.message,
+            contactName: messageInfo.contactName,
+          }).catch((error) => {
+            req.log.error(error, "Failed to enqueue AI reply job");
+          });
+        }
         break;
       case "message.ack":
         const messageAckInfo = await formatMessageAckPayload(

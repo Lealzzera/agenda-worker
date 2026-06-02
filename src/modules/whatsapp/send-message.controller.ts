@@ -26,6 +26,16 @@ export async function sendMessageController(
     session,
   } = messageBodySchema.parse(req.body);
 
+  console.log({
+    chatId,
+    id,
+    replyTo,
+    text,
+    linkPreview,
+    linkPreviewHighQuality,
+    session,
+  });
+
   if (!env.WAHA_URL || !env.WAHA_API_KEY) {
     return res
       .status(500)

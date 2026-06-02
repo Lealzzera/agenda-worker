@@ -1,8 +1,12 @@
 import { buildServer } from "./core/server";
+import { startAiReplyWorker } from "./modules/ai/ai-reply.worker";
 
 async function start() {
   const app = buildServer();
 
+  startAiReplyWorker().catch((error) => {
+    app.log.error(error, "Failed to start AI reply worker");
+  });
   try {
     await app.listen({ port: 3333, host: "0.0.0.0" });
     console.log("Server running on http://localhost:3333");

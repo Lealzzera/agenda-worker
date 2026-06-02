@@ -1,5 +1,5 @@
 import { prisma } from "@/db/prisma";
-import { verifyActiveAccessToken } from "@/lib/jwt";
+import { verifyAccessToken } from "@/lib/jwt";
 import { FastifyInstance } from "fastify";
 import { ClinicRepository } from "../clinics/repositories/clinic-repository";
 import {
@@ -30,7 +30,7 @@ export async function realtimeRoutes(app: FastifyInstance) {
         prisma,
         clinicId,
       );
-      const payload = verifyActiveAccessToken(token);
+      const payload = verifyAccessToken(token);
 
       if (!doesTheClinicExist) {
         socket.close(1008, "Clinic not found");

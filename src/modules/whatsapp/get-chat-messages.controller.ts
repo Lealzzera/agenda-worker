@@ -61,7 +61,6 @@ export async function getChatMessagesController(
     );
 
     const data = await response.json();
-    console.log(data);
     const messagesMapped = (Array.isArray(data) ? data : []).map(
       (message: any) => ({
         id: message.id,
