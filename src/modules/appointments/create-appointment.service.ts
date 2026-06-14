@@ -11,6 +11,7 @@ import { IAppointmentRepository } from "./repositories/appointment-repository.in
 
 interface ICreateAppointmentRequest {
   clinicId: string;
+  serviceId?: string;
   customerPhoneNumber: string;
   customerName: string;
   appointmentDate: string;
@@ -34,6 +35,7 @@ export class CreateAppointmentService {
 
   async exec({
     clinicId,
+    serviceId,
     customerPhoneNumber,
     customerName,
     appointmentDate,
@@ -131,6 +133,7 @@ export class CreateAppointmentService {
 
     const appointment = await this.appointmentRepository.create(prisma, {
       clinicId,
+      serviceId,
       customerPhoneNumber,
       customerName,
       appointmentDate: appointmentFormatted,
