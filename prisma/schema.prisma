@@ -279,8 +279,10 @@ enum Weekday {
 enum AppointmentStatus {
   PENDING
   CONFIRMED
-  CANCELED
+  NOT_ATTENDED
   COMPLETED
+  CANCELED_BY_CLINIC
+  CANCELED_BY_PATIENT
 }
 
 enum WhatsAppSessionStatus {
