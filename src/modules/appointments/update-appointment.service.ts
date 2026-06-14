@@ -181,7 +181,8 @@ export class UpdateAppointmentService {
     const isThisAppointmentAlreadyAtSlot = existingAppointmentsAtSlot.some(
       (appointment) =>
         appointment.id === appointmentBeingUpdatedId &&
-        appointment.status !== AppointmentStatus.CANCELED,
+        appointment.status !== AppointmentStatus.CANCELED_BY_CLINIC &&
+        appointment.status !== AppointmentStatus.CANCELED_BY_PATIENT,
     );
 
     const effectiveBookedCount = isThisAppointmentAlreadyAtSlot
