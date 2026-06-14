@@ -75,3 +75,30 @@ export interface WahaMessageAckPayload {
   };
   session: string;
 }
+
+export type WahaWebhookBody = {
+  event?: string;
+  metadata?: {
+    clinicId?: string;
+  };
+  payload?: {
+    clinicId?: string;
+    metadata?: {
+      clinicId?: string;
+    };
+    _data: {
+      isGroup: boolean;
+    };
+  };
+  session?: string;
+};
+
+export type AiReplyJob = {
+  clinicId: string;
+  session: string;
+  chatId: string;
+  messageId?: string;
+  message: string;
+  hasMedia: boolean;
+  contactName?: string | null;
+};
