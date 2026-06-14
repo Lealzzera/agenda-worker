@@ -23,8 +23,8 @@ async function main() {
       name: "Plano Básico",
       code: "BASIC",
       description: "Para clínicas que estão começando",
-      price_monthly: 9999,
-      stripe_price_id: "price_1TNIa1JYnqXS5Trlz8SgLCQ5",
+      price_monthly: 14990,
+      stripe_price_id: "price_1Tb4QXJYnqXS5TrlnJxAjnOj",
     },
   });
 
@@ -33,8 +33,8 @@ async function main() {
       name: "Plano Plus",
       code: "PLUS",
       description: "Para clínicas que estão crescendo",
-      price_monthly: 14999,
-      stripe_price_id: "price_1TNIazJYnqXS5TrlJ8zMig0R",
+      price_monthly: 29990,
+      stripe_price_id: "price_1Tb4PZJYnqXS5TrljNc9K1PZ",
       max_users: 3,
       max_whatsapp_sessions: 3,
       max_monthly_appointments: null,
