@@ -8,8 +8,10 @@ import { makeUpdateAppointmentServiceFactory } from "./factories/make-update-app
 const appointmentStatusSchema = z.enum([
   "PENDING",
   "CONFIRMED",
-  "CANCELED",
+  "CANCELED_BY_PATIENT",
   "COMPLETED",
+  "CANCELED_BY_CLINIC",
+  "NOT_ATTENDED",
 ]);
 
 const dateOnlyRegex = /^\d{4}-\d{2}-\d{2}$/;
@@ -21,6 +23,7 @@ export async function createAppointmentController(
 ) {
   const createAppointmentBodySchema = z.object({
     clinicId: z.uuid(),
+    serviceId: z.uuid().optional(),
     customerPhoneNumber: z.string().min(11),
     customerName: z.string().min(1, {
       message: "Customer name is required.",
@@ -37,6 +40,7 @@ export async function createAppointmentController(
 
   const {
     clinicId,
+    serviceId,
     customerPhoneNumber,
     customerName,
     appointmentDate,
@@ -48,6 +52,7 @@ export async function createAppointmentController(
   const createAppointmentService = makeCreateAppointmentServiceFactory();
   const { appointment } = await createAppointmentService.exec({
     clinicId,
+    serviceId,
     customerPhoneNumber,
     customerName,
     appointmentDate,
