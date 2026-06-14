@@ -29,7 +29,10 @@ export class AppointmentRepository implements IAppointmentRepository {
                 clinic_id: clinicId,
                 appointment_date: appointmentDate,
                 status: {
-                    notIn: [AppointmentStatus.CANCELED],
+                    notIn: [
+                        AppointmentStatus.CANCELED_BY_CLINIC,
+                        AppointmentStatus.CANCELED_BY_PATIENT,
+                    ],
                 },
             },
         })
