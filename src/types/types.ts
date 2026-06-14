@@ -102,3 +102,19 @@ export type AiReplyJob = {
   hasMedia: boolean;
   contactName?: string | null;
 };
+
+export type OpenAiResponse = {
+  id?: string;
+  output_text?: string;
+  output?: Array<{
+    id?: string;
+    type?: string;
+    call_id?: string;
+    name?: string;
+    arguments?: string;
+    content?: Array<{
+      type?: string;
+      text?: string;
+    }>;
+  }>;
+};
