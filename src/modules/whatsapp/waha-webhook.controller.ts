@@ -1,26 +1,13 @@
 import { env } from "@/env";
-import { WahaMessageAckPayload, WahaMessagePayload } from "@/types/types";
+import {
+  WahaMessageAckPayload,
+  WahaMessagePayload,
+  WahaWebhookBody,
+} from "@/types/types";
 import { FastifyReply, FastifyRequest } from "fastify";
 import crypto from "node:crypto";
-import { enqueueAiReplyJob } from "../ai/ai-reply.queue";
+import { scheduleAiReplyJob } from "../ai/ai-reply.queue";
 import { broadcastToClinic } from "../realtime/realtime-broadcaster";
-
-type WahaWebhookBody = {
-  event?: string;
-  metadata?: {
-    clinicId?: string;
-  };
-  payload?: {
-    clinicId?: string;
-    metadata?: {
-      clinicId?: string;
-    };
-    _data: {
-      isGroup: boolean;
-    };
-  };
-  session?: string;
-};
 
 const WAHA_LOOKUP_TIMEOUT_MS = 1500;
 
@@ -220,11 +207,7 @@ export async function wahaWebhookController(
 
   const body = req.body as WahaWebhookBody;
   const clinicId = await resolveClinicIdFromWebhook(body);
-  console.log("Body ------>", body);
-  console.log("Clinic ID ------>", clinicId);
-
   if (clinicId) {
-    console.log("Clinic ID ------>", clinicId);
     switch (body.event) {
       case "session.status":
         broadcastToClinic(clinicId, {
@@ -239,26 +222,29 @@ export async function wahaWebhookController(
         const messageInfo = await formatMessagePayload(
           body as unknown as WahaMessagePayload,
         );
+
         broadcastToClinic(clinicId, {
           event: "message_any",
           payload: messageInfo,
         });
         if (
           !messageInfo.fromMe &&
-          !messageInfo.hasMedia &&
           messageInfo.message.trim() &&
           (messageInfo.phoneChatId || messageInfo.sourceChatId)
         ) {
-          enqueueAiReplyJob({
-            clinicId,
-            session: messageInfo.session,
-            chatId: messageInfo.phoneChatId ?? messageInfo.sourceChatId,
-            messageId: messageInfo.eventId,
-            message: messageInfo.message,
-            contactName: messageInfo.contactName,
-          }).catch((error) => {
-            req.log.error(error, "Failed to enqueue AI reply job");
-          });
+          try {
+            scheduleAiReplyJob({
+              clinicId,
+              session: messageInfo.session,
+              chatId: messageInfo.phoneChatId ?? messageInfo.sourceChatId,
+              messageId: messageInfo.eventId,
+              message: messageInfo.message,
+              hasMedia: messageInfo.hasMedia,
+              contactName: messageInfo.contactName,
+            });
+          } catch (error) {
+            req.log.error(error, "Failed to schedule AI reply job");
+          }
         }
         break;
       case "message.ack":
