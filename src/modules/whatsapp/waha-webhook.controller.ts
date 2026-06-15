@@ -8,6 +8,8 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import crypto from "node:crypto";
 import { scheduleAiReplyJob } from "../ai/ai-reply.queue";
 import { broadcastToClinic } from "../realtime/realtime-broadcaster";
+import makeFindWhatsappConversationFactory from "../whatsapp-conversations/factories/make-find-whatsapp-conversation.factory";
+import { isWhatsappConversationAiEnabled } from "../whatsapp-conversations/is-whatsapp-conversation-ai-enabled";
 
 const WAHA_LOOKUP_TIMEOUT_MS = 1500;
 
@@ -216,6 +218,8 @@ export async function wahaWebhookController(
         });
         break;
       case "message.any":
+        const findWhatsappConversationService =
+          makeFindWhatsappConversationFactory();
         if (body.payload?._data.isGroup) {
           return;
         }
@@ -223,20 +227,37 @@ export async function wahaWebhookController(
           body as unknown as WahaMessagePayload,
         );
 
+        const conversation = await findWhatsappConversationService.exec({
+          chatId: messageInfo.phoneChatId!,
+          clinicId,
+        });
+
         broadcastToClinic(clinicId, {
           event: "message_any",
           payload: messageInfo,
         });
+        if (conversation && !conversation.aiEnabled) return;
         if (
           !messageInfo.fromMe &&
           messageInfo.message.trim() &&
           (messageInfo.phoneChatId || messageInfo.sourceChatId)
         ) {
           try {
+            const chatId = messageInfo.phoneChatId ?? messageInfo.sourceChatId;
+            const aiEnabled = await isWhatsappConversationAiEnabled({
+              clinicId,
+              session: messageInfo.session,
+              chatId,
+            });
+
+            if (!aiEnabled) {
+              break;
+            }
+
             scheduleAiReplyJob({
               clinicId,
               session: messageInfo.session,
-              chatId: messageInfo.phoneChatId ?? messageInfo.sourceChatId,
+              chatId,
               messageId: messageInfo.eventId,
               message: messageInfo.message,
               hasMedia: messageInfo.hasMedia,

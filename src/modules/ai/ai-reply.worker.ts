@@ -5,6 +5,7 @@ import { AiReplyJob } from "@/types/types";
 import type { Worker as BullMqWorker, Job } from "bullmq";
 
 import { aiToolsList, executeAiSchedulingTool } from "@/helpers/ai-tools-list";
+import { isWhatsappConversationAiEnabled } from "@/modules/whatsapp-conversations/is-whatsapp-conversation-ai-enabled";
 import {
   appendAiConversationTurn,
   buildAiConversationKey,
@@ -37,6 +38,22 @@ export async function startAiReplyWorker() {
         session: job.data.session,
         chatId: job.data.chatId,
       });
+
+      const aiEnabled = await isWhatsappConversationAiEnabled({
+        clinicId: job.data.clinicId,
+        session: job.data.session,
+        chatId: job.data.chatId,
+      });
+
+      if (!aiEnabled) {
+        console.log("AI reply job skipped because AI is disabled", {
+          jobId: job.id,
+          clinicId: job.data.clinicId,
+          chatId: job.data.chatId,
+        });
+        return;
+      }
+
       const conversationHistory = getAiConversationHistory(conversationKey);
 
       const { instructions, input } = await buildAiReplyPrompt({
