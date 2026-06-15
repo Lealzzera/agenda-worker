@@ -220,17 +220,20 @@ export async function wahaWebhookController(
       case "message.any":
         const findWhatsappConversationService =
           makeFindWhatsappConversationFactory();
-        if (body.payload?._data.isGroup) {
+        if (body.payload?._data.Info?.IsGroup) {
           return;
         }
         const messageInfo = await formatMessagePayload(
           body as unknown as WahaMessagePayload,
         );
 
-        const conversation = await findWhatsappConversationService.exec({
-          chatId: messageInfo.phoneChatId!,
-          clinicId,
-        });
+        let conversation = null;
+        if (!messageInfo.fromMe) {
+          conversation = await findWhatsappConversationService.exec({
+            chatId: messageInfo.phoneChatId!,
+            clinicId,
+          });
+        }
 
         broadcastToClinic(clinicId, {
           event: "message_any",
