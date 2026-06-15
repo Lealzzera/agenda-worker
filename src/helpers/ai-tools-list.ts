@@ -1,5 +1,8 @@
 import { prisma } from "@/db/prisma";
 import { makeCreateAppointmentServiceFactory } from "@/modules/appointments/factories/make-create-appointment-service.factory";
+import makeCreateWhatsappConversation from "@/modules/whatsapp-conversations/factories/make-create-whatsapp-conversation.factory";
+import makeFindWhatsappConversationFactory from "@/modules/whatsapp-conversations/factories/make-find-whatsapp-conversation.factory";
+import makeUpdateWhatsappConversationFactory from "@/modules/whatsapp-conversations/factories/make-update-whatsapp-conversation.factory";
 import { WEEKDAY_BY_INDEX } from "@/types/types";
 import { AppointmentStatus } from "@prisma/client";
 
@@ -99,6 +102,43 @@ export const aiToolsList = [
     },
     strict: true,
   },
+  {
+    type: "function",
+    name: "handoff_to_human",
+    description:
+      "Desliga a IA nesta conversa quando o paciente pedir para falar com uma pessoa, atendente, recepcao ou humano.",
+    parameters: {
+      type: "object",
+      properties: {
+        clinicId: { type: "string" },
+        session: {
+          type: "string",
+          description: "Sessao do WhatsApp da conversa.",
+        },
+        chatId: {
+          type: "string",
+          description: "ChatId exato da conversa no WhatsApp.",
+        },
+        customerPhoneNumber: {
+          type: "string",
+          description: "Telefone somente com digitos, incluindo DDI e DDD.",
+        },
+        handoffReason: {
+          type: "string",
+          description: "Motivo resumido do repasse para atendimento humano.",
+        },
+      },
+      required: [
+        "clinicId",
+        "session",
+        "chatId",
+        "customerPhoneNumber",
+        "handoffReason",
+      ],
+      additionalProperties: false,
+    },
+    strict: true,
+  },
 ];
 
 export async function executeAiSchedulingTool({
@@ -137,6 +177,16 @@ export async function executeAiSchedulingTool({
           String(toolArguments.customerPhoneNumber),
         ),
         cancellationReason: String(toolArguments.cancellationReason ?? ""),
+      });
+    case "handoff_to_human":
+      return handoffToHumanFromAi({
+        clinicId: String(toolArguments.clinicId),
+        session: String(toolArguments.session),
+        chatId: String(toolArguments.chatId),
+        customerPhoneNumber: normalizePhoneNumber(
+          String(toolArguments.customerPhoneNumber),
+        ),
+        handoffReason: String(toolArguments.handoffReason ?? ""),
       });
     default:
       return {
@@ -460,6 +510,55 @@ async function cancelAppointmentFromAi({
   return {
     ok: true,
     appointment: formatPublicAppointment(updatedAppointment),
+  };
+}
+
+async function handoffToHumanFromAi({
+  clinicId,
+  session,
+  chatId,
+  customerPhoneNumber,
+  handoffReason,
+}: {
+  clinicId: string;
+  session: string;
+  chatId: string;
+  customerPhoneNumber: string;
+  handoffReason: string;
+}): Promise<ToolResult> {
+  const findWhatsappConversationService = makeFindWhatsappConversationFactory();
+  const updateWhatsappConversationService =
+    makeUpdateWhatsappConversationFactory();
+  const createWhatsappConversationService = makeCreateWhatsappConversation();
+
+  const conversation = await findWhatsappConversationService.exec({
+    clinicId,
+    chatId,
+  });
+
+  if (conversation) {
+    await updateWhatsappConversationService.exec({
+      id: conversation.id,
+      clinicId,
+      chatId,
+      aiEnabled: false,
+    });
+  } else {
+    await createWhatsappConversationService.exec({
+      clinicId,
+      chatId,
+      session,
+      phoneNumber: customerPhoneNumber,
+      aiEnabled: false,
+    });
+  }
+
+  return {
+    ok: true,
+    aiEnabled: false,
+    handoffReason,
+    message:
+      "AI disabled for this WhatsApp conversation. Future patient messages should be handled by a human.",
   };
 }
 
