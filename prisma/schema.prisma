@@ -46,6 +46,7 @@ model Clinic {
   services ClinicService[]
   appointments Appointments[]
   whatsapp_session WhatsAppSession?
+  whatsapp_conversations WhatsAppConversation[]
 
   @@index([status])
   @@index([stripe_customer_id])
@@ -221,6 +222,26 @@ model WhatsAppSession {
 
   @@index([status])
   @@map("whatsapp_sessions")
+}
+
+model WhatsAppConversation {
+  id String @id @default(uuid())
+
+  clinic_id String
+  clinic Clinic @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
+
+  session String
+  chat_id String
+  phone_number String
+
+  ai_enabled Boolean @default(true)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@unique([clinic_id, session, chat_id])
+  @@index([clinic_id])
+  @@map("whatsapp_conversations")
 }
 
 enum UserStatus {
