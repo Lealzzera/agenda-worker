@@ -1,6 +1,7 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import makeCreateStripeSessionService from "./factories/make-create-stripe-session-service.factory";
+import makeCompleteStripeCheckoutSessionService from "./factories/make-complete-stripe-checkout-session-service.factory";
 
 export async function createStripeCheckoutSessionController(
   req: FastifyRequest,
@@ -30,5 +31,31 @@ export async function createStripeCheckoutSessionController(
   return res.send({
     clientSecret: stripeSession.client_secret,
     session: stripeSession,
+  });
+}
+
+export async function completeStripeCheckoutSessionController(
+  req: FastifyRequest,
+  res: FastifyReply,
+) {
+  const bodySchema = z.object({
+    sessionId: z.string(),
+  });
+
+  const { sessionId } = bodySchema.parse(req.body);
+  const completeStripeCheckoutSessionService =
+    makeCompleteStripeCheckoutSessionService();
+  const { accessToken, refreshToken } =
+    await completeStripeCheckoutSessionService.exec({ sessionId });
+
+  res.setCookie("refresh_token", refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+  });
+
+  return res.status(200).send({
+    access_token: accessToken,
   });
 }

@@ -7,7 +7,7 @@ type RegisterUserClinicAccountServiceRequest = {
   stripeCheckoutSessionId: string;
   stripeCustomerId: string;
   stripeSubscriptionId: string;
-  lastStripeInvoiceId: string;
+  lastStripeInvoiceId?: string | null;
 };
 
 type RegisterUserClinicData = {
@@ -79,7 +79,7 @@ export class RegisterUserClinicAccountService {
       stripeCustomerId,
       stripeSubscriptionId,
       stripeCheckoutSessionId,
-      lastStripeInvoiceId,
+      lastStripeInvoiceId: lastStripeInvoiceId ?? undefined,
     });
 
     await this.signupDraftRepository.delete(prisma, draftId);

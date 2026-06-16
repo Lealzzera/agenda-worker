@@ -41,4 +41,11 @@ export interface ISubscriptionRepository {
     client: PrismaClientOrTx,
     stripeSubscriptionId: string,
   ): Promise<Subscription | null>;
+  findOwnerUserByStripeCheckoutSessionId(
+    client: PrismaClientOrTx,
+    stripeCheckoutSessionId: string,
+  ): Promise<{
+    id: string;
+    email: string;
+  } | null>;
 }
