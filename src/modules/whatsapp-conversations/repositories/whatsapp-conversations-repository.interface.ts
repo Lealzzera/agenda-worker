@@ -51,4 +51,9 @@ export interface IWhatsappConversationsRepository {
     client: PrismaClientOrTx,
     { chatId, clinicId }: FindConversationByChatAndClinicIdType,
   ): Promise<WhatsAppConversation | null>;
+
+  findAllByClinicId(
+    client: PrismaClientOrTx,
+    clinicId: string,
+  ): Promise<WhatsAppConversation[]>;
 }

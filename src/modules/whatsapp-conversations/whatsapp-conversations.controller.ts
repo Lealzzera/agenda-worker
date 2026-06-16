@@ -1,7 +1,9 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import makeCreateWhatsappConversation from "./factories/make-create-whatsapp-conversation.factory";
+import makeFindAllByClinicIdFactory from "./factories/make-find-all-by-clinic-id.factory";
 import makeFindWhatsappConversationFactory from "./factories/make-find-whatsapp-conversation.factory";
+import makeListWhatsappConversationsFactory from "./factories/make-list-whatsapp-conversations.factory";
 
 function presentWhatsappConversation(conversation: {
   id: string;
@@ -99,4 +101,44 @@ export async function findWhatsappConversationController(
   });
 
   return res.status(200).send(conversation);
+}
+
+export async function listWhatsappConversationsController(
+  req: FastifyRequest,
+  res: FastifyReply,
+) {
+  const listParamsSchema = z.object({
+    clinicId: z.string(),
+  });
+
+  const { clinicId } = listParamsSchema.parse(req.params);
+  const listWhatsappConversationsService =
+    makeListWhatsappConversationsFactory();
+
+  const { conversations } = await listWhatsappConversationsService.exec({
+    clinicId,
+  });
+
+  return res.status(200).send({
+    conversations: conversations.map(presentWhatsappConversation),
+  });
+}
+
+export async function findAllByClinicIdController(
+  req: FastifyRequest,
+  res: FastifyReply,
+) {
+  const findAllParamsSechema = z.object({
+    clinicId: z.string(),
+  });
+
+  const { clinicId } = findAllParamsSechema.parse(req.params);
+
+  const findAllByClinicIdService = makeFindAllByClinicIdFactory();
+
+  const conversationList = await findAllByClinicIdService.exec(clinicId);
+
+  return res.status(200).send({
+    data: conversationList,
+  });
 }

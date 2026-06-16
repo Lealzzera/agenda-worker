@@ -87,7 +87,9 @@ export type WahaWebhookBody = {
       clinicId?: string;
     };
     _data: {
-      isGroup: boolean;
+      Info?: {
+        IsGroup: boolean;
+      };
     };
   };
   session?: string;

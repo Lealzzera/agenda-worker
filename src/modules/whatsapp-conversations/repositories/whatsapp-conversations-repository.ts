@@ -92,4 +92,16 @@ export class WhatsappConversationsRepository implements IWhatsappConversationsRe
     });
     return conversationData || null;
   }
+
+  async findAllByClinicId(
+    client: PrismaClientOrTx,
+    clinicId: string,
+  ): Promise<WhatsAppConversation[]> {
+    const conversations = await client.whatsAppConversation.findMany({
+      where: {
+        clinic_id: clinicId,
+      },
+    });
+    return conversations;
+  }
 }
