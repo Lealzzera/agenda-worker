@@ -26,6 +26,13 @@ const envSchema = z.object({
   STRIPE_SECRET_KEY: z.string(),
   STRIPE_WEBHOOK_SECRET: z.string(),
   COOKIE_SECRET: z.string(),
+  MAILPIT_PORT: z.coerce.number().default(1025),
+  MAILPIT_WEB_PORT: z.coerce.number().default(8025),
+  SMTP_HOST: z.string().default("localhost"),
+  SMTP_PORT: z.coerce.number().default(1025),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().default("Blink <no-reply@blink.local>"),
 });
 
 const parsed = envSchema.safeParse(process.env);

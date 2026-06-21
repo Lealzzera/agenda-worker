@@ -13,6 +13,7 @@ import { stripeRoutes } from "./modules/stripe/stripe.routes";
 import { userRoutes } from "./modules/user/user.routes";
 import { whatsappConversationsRoutes } from "./modules/whatsapp-conversations/whatsapp-conversations.routes";
 import { whatsappRoutes } from "./modules/whatsapp/whatsapp.routes";
+import { emailRoutes } from "./modules/email/email.routes";
 
 export default async function routes(app: FastifyInstance) {
   app.register(planRoutes, { prefix: "/plans" });
@@ -31,4 +32,5 @@ export default async function routes(app: FastifyInstance) {
   app.register(whatsappConversationsRoutes, {
     prefix: "/whatsapp-conversations",
   });
+  app.register(emailRoutes, { prefix: "/email" });
 }

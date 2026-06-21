@@ -177,6 +177,7 @@ export async function wahaWebhookController(
 
   const rawBody = JSON.stringify(req.body);
 
+
   const calculatedHmac = crypto
     .createHmac(algorithm, env.WAHA_WEBHOOK_SECRET)
     .update(rawBody)
@@ -218,6 +219,7 @@ export async function wahaWebhookController(
         });
         break;
       case "message.any":
+        console.log(body)
         const findWhatsappConversationService =
           makeFindWhatsappConversationFactory();
         if (body.payload?._data.Info?.IsGroup) {
