@@ -4,11 +4,10 @@
   "main": "dist/server.js",
   "type": "module",
   "scripts": {
-    "build": "tsc && prisma generate",
+    "build": "prisma generate && tsc",
     "start": "node dist/server.js",
     "dev": "nodemon --watch src --ext ts,json --exec tsx src/server.ts",
-    "worker:ai": "tsx src/workers/ai-reply.ts",
-    "postbuild": "cp .env dist/ && cp -r prisma dist/"
+    "worker:ai": "tsx src/workers/ai-reply.ts"
   },
   "engines": {
     "node": ">=22.0.0"
