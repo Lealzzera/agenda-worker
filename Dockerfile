@@ -9,6 +9,8 @@ FROM node:22-alpine AS build
 
 WORKDIR /app
 
+ENV DATABASE_URL="postgresql://user:password@localhost:5432/agenda_worker"
+
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
