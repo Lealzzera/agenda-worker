@@ -16,6 +16,10 @@ import { whatsappRoutes } from "./modules/whatsapp/whatsapp.routes";
 import { emailRoutes } from "./modules/email/email.routes";
 
 export default async function routes(app: FastifyInstance) {
+  app.get("/health", async () => ({
+    status: "ok",
+  }));
+
   app.register(planRoutes, { prefix: "/plans" });
   app.register(authRoutes, { prefix: "/auth" });
   app.register(clinicRoutes, { prefix: "/clinic" });
