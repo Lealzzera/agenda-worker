@@ -39,4 +39,21 @@ export class UserRepository implements IUserRepository {
     });
     return user;
   }
+
+  async updatePasswordHash(
+    client: PrismaClientOrTx,
+    userId: string,
+    passwordHash: string,
+  ): Promise<User> {
+    const user = await client.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        password_hash: passwordHash,
+      },
+    });
+
+    return user;
+  }
 }

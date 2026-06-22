@@ -17,9 +17,11 @@ export async function signupDraftController(
       clinicType: z.nativeEnum(ClinicType),
       phone: z.string(),
       address: z.string(),
+      addressNumber: z.string().optional(),
       postalCode: z.string(),
       city: z.string(),
       state: z.string(),
+      additionalInformation: z.string().optional(),
       planId: z.string(),
       workingHours: z.array(
         z.object({

@@ -166,6 +166,7 @@ export class RegisterClinicService {
           evaluationPriceCents: settings.chargesEvaluation
             ? settings.evaluationPriceCents
             : 0,
+          additionalInformation: settings.additionalInformation?.trim() || null,
         });
       }
 

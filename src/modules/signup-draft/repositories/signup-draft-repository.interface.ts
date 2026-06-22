@@ -14,6 +14,7 @@ export interface SignupDraftData {
   postalCode: string;
   city: string;
   state: string;
+  additionalInformation?: string;
   planId: string;
   workingHours: IWorkingHourInput[];
   services: IServiceInput[];
@@ -44,6 +45,7 @@ export interface UpdateSignupDraft {
     postalCode?: string;
     city?: string;
     state?: string;
+    additionalInformation?: string;
     planId?: string;
     workingHours?: IWorkingHourInput[];
     services?: IServiceInput[];

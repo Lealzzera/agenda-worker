@@ -1,6 +1,8 @@
+import { prisma } from "@/db/prisma";
 import { env } from "@/env";
 import { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
+import { ClinicRepository } from "../clinics/repositories/clinic-repository";
 
 export async function postQrCodeController(
   req: FastifyRequest,
@@ -8,12 +10,21 @@ export async function postQrCodeController(
 ) {
   const bodySchema = z.object({
     sessionName: z.string(),
+    clinicId: z.string(),
   });
 
-  const { sessionName } = bodySchema.parse(req.body);
+  const clinicRepository = new ClinicRepository();
+
+  const { sessionName, clinicId } = bodySchema.parse(req.body);
 
   if (!env.WAHA_API_KEY) {
     return res.status(500).send({ error: "WAHA_API_KEY is not defined" });
+  }
+
+  const doesTheClinicExist = await clinicRepository.findById(prisma, clinicId);
+
+  if (!doesTheClinicExist) {
+    return res.status(404).send({ error: "Clinic not found" });
   }
 
   try {
@@ -88,12 +99,42 @@ export async function postQrCodeController(
         name: sessionName,
         start: true,
         config: {
+          metadata: {
+            clinicId,
+          },
           noweb: {
             store: {
               enabled: true,
               fullSync: true,
             },
           },
+          webhooks: [
+            {
+              url: env.WAHA_WEBHOOK_URL,
+              events: [
+                "message.any",
+                "session.status",
+                "message.ack",
+                "message.reaction",
+                "presence.update",
+                "message.waiting",
+              ],
+              hmac: {
+                key: env.WAHA_WEBHOOK_SECRET,
+              },
+              retries: {
+                delaySeconds: 2,
+                attempts: 5,
+                policy: "linear",
+              },
+              customHeaders: [
+                {
+                  name: "X-Request-ID",
+                  value: "123",
+                },
+              ],
+            },
+          ],
         },
       }),
     });
@@ -148,7 +189,6 @@ export async function postQrCodeController(
 
     return { qrCode: imageUrl };
   } catch (error) {
-    console.error(error);
     return res.status(500).send({ error: "Internal server error" });
   }
 }

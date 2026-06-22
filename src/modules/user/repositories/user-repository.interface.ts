@@ -15,4 +15,9 @@ export interface IUserRepository {
   ): Promise<User>;
   findByEmail(client: PrismaClientOrTx, email: string): Promise<User | null>;
   findById(client: PrismaClientOrTx, id: string): Promise<User | null>;
+  updatePasswordHash(
+    client: PrismaClientOrTx,
+    userId: string,
+    passwordHash: string,
+  ): Promise<User>;
 }

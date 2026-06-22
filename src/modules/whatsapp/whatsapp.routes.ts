@@ -5,6 +5,7 @@ import { disconnectController } from "./disconnect.controller";
 import { getChatMessagesController } from "./get-chat-messages.controller";
 import { postQrCodeController } from "./qrCode.controller";
 import { sendMessageController } from "./send-message.controller";
+import { wahaWebhookController } from "./waha-webhook.controller";
 
 export async function whatsappRoutes(app: FastifyInstance) {
   app.post("/qr-code", { preHandler: [verifyJwt] }, async (req, res) => {
@@ -34,4 +35,7 @@ export async function whatsappRoutes(app: FastifyInstance) {
       return getChatMessagesController(req, res);
     },
   );
+  app.post("/webhook", async (req, res) => {
+    return wahaWebhookController(req, res);
+  });
 }

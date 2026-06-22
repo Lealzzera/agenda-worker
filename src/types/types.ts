@@ -15,4 +15,108 @@ export interface IServiceInput {
 export interface ISettingsInput {
   chargesEvaluation?: boolean;
   evaluationPriceCents?: number;
+  additionalInformation?: string | null;
 }
+
+export const WEEKDAY_BY_INDEX: Weekday[] = [
+  Weekday.SUNDAY,
+  Weekday.MONDAY,
+  Weekday.TUESDAY,
+  Weekday.WEDNESDAY,
+  Weekday.THURSDAY,
+  Weekday.FRIDAY,
+  Weekday.SATURDAY,
+];
+
+export type Periods = {
+  startTime: string;
+  endTime: string;
+};
+
+export interface ICreateClinicSpecialDate {
+  clinicId: string;
+  specialDate: string;
+  isOpen: boolean;
+  periods?: Periods[];
+  note?: string | null;
+}
+
+export interface WahaMessagePayload {
+  id?: string;
+  event: string;
+  payload: {
+    ack: number;
+    body: string;
+    chatId?: string;
+    from: string;
+    fromMe: boolean;
+    hasMedia: boolean;
+    id?: string;
+    notifyName?: string;
+    source: string;
+    timestamp: number;
+    to?: string;
+  };
+  session: string;
+}
+
+export interface WahaMessageAckPayload {
+  id?: string;
+  event: string;
+  payload: {
+    ack: number;
+    ackName?: string;
+    chatId?: string;
+    from: string;
+    fromMe: boolean;
+    id?: string;
+    participant?: string | null;
+    to?: string;
+  };
+  session: string;
+}
+
+export type WahaWebhookBody = {
+  event?: string;
+  metadata?: {
+    clinicId?: string;
+  };
+  payload?: {
+    clinicId?: string;
+    metadata?: {
+      clinicId?: string;
+    };
+    _data: {
+      Info?: {
+        IsGroup: boolean;
+      };
+    };
+  };
+  session?: string;
+};
+
+export type AiReplyJob = {
+  clinicId: string;
+  session: string;
+  chatId: string;
+  messageId?: string;
+  message: string;
+  hasMedia: boolean;
+  contactName?: string | null;
+};
+
+export type OpenAiResponse = {
+  id?: string;
+  output_text?: string;
+  output?: Array<{
+    id?: string;
+    type?: string;
+    call_id?: string;
+    name?: string;
+    arguments?: string;
+    content?: Array<{
+      type?: string;
+      text?: string;
+    }>;
+  }>;
+};

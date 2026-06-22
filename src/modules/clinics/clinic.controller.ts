@@ -31,6 +31,7 @@ const settingsSchema = z.object({
   allowCancellation: z.boolean().optional(),
   timezone: z.string().optional(),
   aiAgentName: z.string().optional(),
+  additionalInformation: z.string().nullable().optional(),
 });
 
 export async function registerClinicController(
@@ -63,6 +64,7 @@ export async function registerClinicController(
     postalCode: z.string().optional(),
     city: z.string().optional(),
     state: z.string().optional(),
+    additionalInformation: z.string().optional(),
     planId: z.string(),
     workingHours: z.array(workingHourSchema).optional(),
     services: z.array(serviceSchema).optional(),
@@ -81,6 +83,7 @@ export async function registerClinicController(
     workingHours,
     services,
     settings,
+    additionalInformation,
   } = data;
 
   const userPictureUrl = data.userPictureUrl || undefined;
@@ -110,7 +113,14 @@ export async function registerClinicController(
     planId,
     workingHours,
     services,
-    settings,
+    settings:
+      settings || additionalInformation
+        ? {
+            ...(settings ?? {}),
+            additionalInformation:
+              additionalInformation?.trim() || settings?.additionalInformation,
+          }
+        : undefined,
   });
 
   return res.status(201).send({ message: "Clinic created successfully" });

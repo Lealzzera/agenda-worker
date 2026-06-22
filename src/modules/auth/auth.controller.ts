@@ -2,6 +2,8 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import makeAuthServiceFactory from "./factories/make-auth-service.factory";
 import makeRefreshTokenServiceFactory from "./factories/make-refresh-token-service.factory";
+import makeRequestPasswordResetServiceFactory from "./factories/make-request-password-reset-service.factory";
+import makeResetPasswordServiceFactory from "./factories/make-reset-password-service.factory";
 
 export async function loginController(req: FastifyRequest, res: FastifyReply) {
   const bodySchema = z.object({
@@ -59,4 +61,42 @@ export async function refreshTokenController(
   } catch (error) {
     return res.status(401).send({ message: "Invalid refresh token" });
   }
+}
+
+export async function requestPasswordResetController(
+  req: FastifyRequest,
+  res: FastifyReply,
+) {
+  const bodySchema = z.object({
+    email: z.email(),
+  });
+
+  const { email } = bodySchema.parse(req.body);
+  const requestPasswordResetService = makeRequestPasswordResetServiceFactory();
+
+  await requestPasswordResetService.exec({ email });
+
+  return res.status(200).send({
+    message:
+      "If this email exists, password reset instructions will be sent shortly.",
+  });
+}
+
+export async function resetPasswordController(
+  req: FastifyRequest,
+  res: FastifyReply,
+) {
+  const bodySchema = z.object({
+    token: z.string().min(1),
+    password: z.string().min(8),
+  });
+
+  const { token, password } = bodySchema.parse(req.body);
+  const resetPasswordService = makeResetPasswordServiceFactory();
+
+  await resetPasswordService.exec({ token, password });
+
+  return res.status(200).send({
+    message: "Password reset successfully.",
+  });
 }

@@ -69,6 +69,7 @@ export async function getChatMessagesController(
         fromMe: message.fromMe,
         source: message.source,
         hasMedia: message.hasMedia,
+        ack: message.ack,
       }),
     );
 

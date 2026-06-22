@@ -1,5 +1,9 @@
 import { ClinicService } from "@prisma/client";
-import { IClinicServiceRepository, ICreateClinicService } from "./clinic-service-repository.interface";
+import {
+  IClinicServiceRepository,
+  ICreateClinicService,
+  IUpdateClinicService,
+} from "./clinic-service-repository.interface";
 import { PrismaClientOrTx } from "@/types/prisma.type";
 
 export class ClinicServiceRepository implements IClinicServiceRepository {
@@ -34,5 +38,44 @@ export class ClinicServiceRepository implements IClinicServiceRepository {
             }
         })
         return clinicService
+    }
+
+    async findAllByClinicId(client: PrismaClientOrTx, clinicId: string): Promise<ClinicService[]> {
+        const services = await client.clinicService.findMany({
+            where: {
+                clinic_id: clinicId,
+            },
+            orderBy: {
+                created_at: "asc",
+            },
+        })
+        return services
+    }
+
+    async update(client: PrismaClientOrTx, { id, name, durationMinutes, priceCents }: IUpdateClinicService): Promise<ClinicService> {
+        const clinicService = await client.clinicService.update({
+            where: {
+                id,
+            },
+            data: {
+                name,
+                duration_minutes: durationMinutes,
+                price_cents: priceCents,
+            },
+        })
+        return clinicService
+    }
+
+    async deleteManyByIdsAndClinicId(client: PrismaClientOrTx, clinicId: string, ids: string[]): Promise<void> {
+        if (ids.length === 0) return
+
+        await client.clinicService.deleteMany({
+            where: {
+                clinic_id: clinicId,
+                id: {
+                    in: ids,
+                },
+            },
+        })
     }
 }

@@ -75,4 +75,38 @@ export class SubscriptionRepository implements ISubscriptionRepository {
     });
     return data || null;
   }
+
+  async findOwnerUserByStripeCheckoutSessionId(
+    client: PrismaClientOrTx,
+    stripeCheckoutSessionId: string,
+  ) {
+    const subscription = await client.subscription.findUnique({
+      where: {
+        stripe_checkout_session_id: stripeCheckoutSessionId,
+      },
+      include: {
+        clinic: {
+          include: {
+            members: {
+              where: {
+                role: "OWNER",
+                status: "ACTIVE",
+              },
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    email: true,
+                  },
+                },
+              },
+              take: 1,
+            },
+          },
+        },
+      },
+    });
+
+    return subscription?.clinic.members[0]?.user ?? null;
+  }
 }

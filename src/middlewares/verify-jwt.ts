@@ -1,31 +1,32 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { verifyAccessToken } from "../lib/jwt";
+import { verifyActiveAccessToken } from "../lib/jwt";
 
 export async function verifyJwt(req: FastifyRequest, res: FastifyReply) {
-    try {
-        const authHeader = req.headers.authorization;
-        
-        if(!authHeader) {
-            return res.status(401).send({message: 'Unauthorized'})
-        }
+  try {
+    const authHeader = req.headers.authorization;
 
-        const [scheme, token] = authHeader.split(' ')
-
-        if(scheme !== 'Bearer') {
-            return res.status(401).send({message: "Unauthorized"})
-        }
-
-        if(!token) {
-            return res.status(401).send({message: 'Unauthorized'})
-        }
-
-        const payload = verifyAccessToken(token)
-
-        req.user = {
-            sub: payload.sub,
-            role: payload.role
-        }
-    } catch {
-        return res.status(401).send({message: 'Invalid or expired token'})
+    if (!authHeader) {
+      return res.status(401).send({ message: "Unauthorized" });
     }
+
+    const [scheme, token] = authHeader.split(" ");
+
+    if (scheme !== "Bearer") {
+      return res.status(401).send({ message: "Unauthorized" });
+    }
+
+    if (!token) {
+      return res.status(401).send({ message: "Unauthorized" });
+    }
+
+    const payload = verifyActiveAccessToken(token);
+
+    req.user = {
+      sub: payload.sub,
+      role: payload.role,
+      email: payload.email,
+    };
+  } catch {
+    return res.status(401).send({ message: "Invalid or expired token" });
+  }
 }

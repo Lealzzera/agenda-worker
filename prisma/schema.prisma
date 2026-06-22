@@ -17,9 +17,24 @@ model User {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
   clinic_members ClinicMember[]
+  password_reset_tokens PasswordResetToken[]
 
   @@index([status])
   @@map("users")
+}
+
+model PasswordResetToken {
+  id String @id @default(uuid())
+  user_id String
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  token_hash String @unique
+  expires_at DateTime
+  used_at DateTime?
+  created_at DateTime @default(now())
+
+  @@index([user_id])
+  @@index([expires_at])
+  @@map("password_reset_tokens")
 }
 
 model Clinic {
@@ -46,6 +61,7 @@ model Clinic {
   services ClinicService[]
   appointments Appointments[]
   whatsapp_session WhatsAppSession?
+  whatsapp_conversations WhatsAppConversation[]
 
   @@index([status])
   @@index([stripe_customer_id])
@@ -64,6 +80,7 @@ model ClinicSettings {
   allow_cancellation Boolean @default(true)
   timezone String @default("America/Sao_Paulo")
   ai_agent_name String @default("Aurora")
+  additional_information String?
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
@@ -77,6 +94,7 @@ model Appointments {
   service_id String?
   service ClinicService? @relation(fields: [service_id], references: [id], onDelete: SetNull)
   customer_phone_number String
+  customer_name String?
   appointment_date DateTime
   status AppointmentStatus @default(PENDING)
   notes String?
@@ -110,7 +128,7 @@ model ClinicSpecialDate {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  @@unique([clinic_id, date])
+  @@unique([clinic_id, date, start_time, end_time])
   @@index([clinic_id, date])
   @@map("clinic_special_dates")
 }
@@ -221,6 +239,26 @@ model WhatsAppSession {
   @@map("whatsapp_sessions")
 }
 
+model WhatsAppConversation {
+  id String @id @default(uuid())
+
+  clinic_id String
+  clinic Clinic @relation(fields: [clinic_id], references: [id], onDelete: Cascade)
+
+  session String
+  chat_id String
+  phone_number String
+
+  ai_enabled Boolean @default(true)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@unique([clinic_id, session, chat_id])
+  @@index([clinic_id])
+  @@map("whatsapp_conversations")
+}
+
 enum UserStatus {
   ACTIVE
   INACTIVE
@@ -277,8 +315,10 @@ enum Weekday {
 enum AppointmentStatus {
   PENDING
   CONFIRMED
-  CANCELED
+  NOT_ATTENDED
   COMPLETED
+  CANCELED_BY_CLINIC
+  CANCELED_BY_PATIENT
 }
 
 enum WhatsAppSessionStatus {
