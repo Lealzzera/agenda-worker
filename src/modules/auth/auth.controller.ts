@@ -1,6 +1,7 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import makeAuthServiceFactory from "./factories/make-auth-service.factory";
+import makeChangePasswordServiceFactory from "./factories/make-change-password-service.factory";
 import makeRefreshTokenServiceFactory from "./factories/make-refresh-token-service.factory";
 import makeRequestPasswordResetServiceFactory from "./factories/make-request-password-reset-service.factory";
 import makeResetPasswordServiceFactory from "./factories/make-reset-password-service.factory";
@@ -98,5 +99,28 @@ export async function resetPasswordController(
 
   return res.status(200).send({
     message: "Password reset successfully.",
+  });
+}
+
+export async function changePasswordController(
+  req: FastifyRequest,
+  res: FastifyReply,
+) {
+  const bodySchema = z.object({
+    currentPassword: z.string().min(1),
+    newPassword: z.string().min(8),
+  });
+
+  const { currentPassword, newPassword } = bodySchema.parse(req.body);
+  const changePasswordService = makeChangePasswordServiceFactory();
+
+  await changePasswordService.exec({
+    userId: req.user.sub,
+    currentPassword,
+    newPassword,
+  });
+
+  return res.status(200).send({
+    message: "Password changed successfully.",
   });
 }

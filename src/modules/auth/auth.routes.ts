@@ -1,5 +1,7 @@
 import { FastifyInstance } from "fastify";
+import { verifyJwt } from "@/middlewares/verify-jwt";
 import {
+  changePasswordController,
   loginController,
   refreshTokenController,
   requestPasswordResetController,
@@ -17,5 +19,10 @@ export async function authRoutes(app: FastifyInstance) {
   );
   app.post("/reset-password", async (req, res) =>
     resetPasswordController(req, res),
+  );
+  app.patch(
+    "/change-password",
+    { preHandler: verifyJwt },
+    async (req, res) => changePasswordController(req, res),
   );
 }
