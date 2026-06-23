@@ -13,7 +13,7 @@ export const aiToolsList = [
     type: "function",
     name: "check_appointment",
     description:
-      "Verifica se a data e horario desejados podem receber um novo agendamento antes de criar a consulta.",
+      "Verifica se a data e horario desejados podem receber um novo agendamento de avaliação antes de criar a consulta.",
     parameters: {
       type: "object",
       properties: {
@@ -40,7 +40,7 @@ export const aiToolsList = [
     type: "function",
     name: "create_appointment",
     description:
-      "Cria um agendamento apos check_appointment confirmar que o agendamento pode ser criado.",
+      "Cria exclusivamente um agendamento de avaliacao apos check_appointment confirmar que o horario pode ser criado. Nao use para marcar procedimentos, tratamentos ou servicos especificos.",
     parameters: {
       type: "object",
       properties: {
@@ -106,7 +106,7 @@ export const aiToolsList = [
     type: "function",
     name: "handoff_to_human",
     description:
-      "Desliga a IA nesta conversa quando o paciente pedir para falar com uma pessoa, atendente, recepcao ou humano.",
+      "Desliga a IA nesta conversa quando o paciente informar que ja e paciente ou quando precisar falar com uma pessoa, atendente, recepcao ou humano.",
     parameters: {
       type: "object",
       properties: {
@@ -446,13 +446,14 @@ async function createAppointmentFromAi({
   notes: string;
 }): Promise<ToolResult> {
   const createAppointmentService = makeCreateAppointmentServiceFactory();
+  const appointmentNotes = ["Avaliacao", notes].filter(Boolean).join(" - ");
   const { appointment } = await createAppointmentService.exec({
     clinicId,
     customerName,
     customerPhoneNumber,
     appointmentDate,
     time,
-    notes,
+    notes: appointmentNotes,
     status: AppointmentStatus.PENDING,
   });
 
@@ -570,7 +571,6 @@ function formatPublicAppointment(appointment: {
   customer_phone_number: string;
 }) {
   return {
-    status: appointment.status,
     appointmentDate: appointment.appointment_date.toISOString(),
     customerName: appointment.customer_name,
     customerPhoneNumber: appointment.customer_phone_number,
