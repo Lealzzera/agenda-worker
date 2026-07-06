@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
+import Stripe from "stripe";
 
 const databaseUrl = process.env.DATABASE_URL;
 
@@ -14,69 +15,123 @@ const adapter = new PrismaPg({
 
 const prisma = new PrismaClient({ adapter });
 
-function getRequiredEnv(key: string) {
-  const value = process.env[key];
+type PlanSeedConfig = {
+  code: "BASIC" | "PLUS";
+  name: string;
+  description: string;
+  priceMonthly: number;
+  stripePriceEnv: "STRIPE_BASIC_PRICE_ID" | "STRIPE_PLUS_PRICE_ID";
+  stripeLookupKey: string;
+  trialDays: number;
+  maxUsers: number;
+  maxWhatsappSessions: number;
+  maxMonthlyAppointments: number | null;
+};
 
-  if (!value) {
-    throw new Error(`${key} is required to seed plans.`);
+async function resolveStripePriceId(
+  stripe: Stripe,
+  plan: PlanSeedConfig,
+): Promise<string> {
+  const configuredPriceId = process.env[plan.stripePriceEnv];
+
+  if (configuredPriceId) {
+    return configuredPriceId;
   }
 
-  return value;
+  const existingPrices = await stripe.prices.list({
+    active: true,
+    lookup_keys: [plan.stripeLookupKey],
+    limit: 1,
+  });
+
+  if (existingPrices.data[0]) {
+    return existingPrices.data[0].id;
+  }
+
+  const product = await stripe.products.create({
+    name: plan.name,
+    description: plan.description,
+    metadata: {
+      planCode: plan.code,
+    },
+  });
+
+  const price = await stripe.prices.create({
+    product: product.id,
+    currency: "brl",
+    unit_amount: plan.priceMonthly,
+    recurring: {
+      interval: "month",
+    },
+    lookup_key: plan.stripeLookupKey,
+  });
+
+  return price.id;
 }
 
 async function seedPlans() {
-  const basicStripePriceId = getRequiredEnv("STRIPE_BASIC_PRICE_ID");
-  const plusStripePriceId = getRequiredEnv("STRIPE_PLUS_PRICE_ID");
+  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 
-  await prisma.plan.upsert({
-    where: { code: "BASIC" },
-    update: {
-      name: "Plano Basico",
-      description: "Para clinicas que estao comecando",
-      price_monthly: 14990,
-      stripe_price_id: basicStripePriceId,
-      trial_days: 7,
-      max_users: 1,
-      max_whatsapp_sessions: 1,
-      max_monthly_appointments: 50,
-    },
-    create: {
-      name: "Plano Basico",
+  if (!stripeSecretKey) {
+    throw new Error("STRIPE_SECRET_KEY is required to seed plans.");
+  }
+
+  const stripe = new Stripe(stripeSecretKey);
+  const plans: PlanSeedConfig[] = [
+    {
       code: "BASIC",
+      name: "Plano Basico",
       description: "Para clinicas que estao comecando",
-      price_monthly: 14990,
-      stripe_price_id: basicStripePriceId,
-      trial_days: 7,
-      max_users: 1,
-      max_whatsapp_sessions: 1,
-      max_monthly_appointments: 50,
+      priceMonthly: 14990,
+      stripePriceEnv: "STRIPE_BASIC_PRICE_ID",
+      stripeLookupKey: "blink_basic_monthly",
+      trialDays: 7,
+      maxUsers: 1,
+      maxWhatsappSessions: 1,
+      maxMonthlyAppointments: 50,
     },
-  });
-
-  await prisma.plan.upsert({
-    where: { code: "PLUS" },
-    update: {
-      name: "Plano Plus",
-      description: "Para clinicas que estao crescendo",
-      price_monthly: 29990,
-      stripe_price_id: plusStripePriceId,
-      trial_days: 7,
-      max_users: 3,
-      max_whatsapp_sessions: 3,
-      max_monthly_appointments: null,
-    },
-    create: {
-      name: "Plano Plus",
+    {
       code: "PLUS",
+      name: "Plano Plus",
       description: "Para clinicas que estao crescendo",
-      price_monthly: 29990,
-      stripe_price_id: plusStripePriceId,
-      trial_days: 7,
-      max_users: 3,
-      max_whatsapp_sessions: 3,
-      max_monthly_appointments: null,
+      priceMonthly: 29990,
+      stripePriceEnv: "STRIPE_PLUS_PRICE_ID",
+      stripeLookupKey: "blink_plus_monthly",
+      trialDays: 7,
+      maxUsers: 3,
+      maxWhatsappSessions: 3,
+      maxMonthlyAppointments: null,
     },
-  });
+  ];
+
+  for (const plan of plans) {
+    const stripePriceId = await resolveStripePriceId(stripe, plan);
+
+    await prisma.plan.upsert({
+      where: { code: plan.code },
+      update: {
+        name: plan.name,
+        description: plan.description,
+        price_monthly: plan.priceMonthly,
+        stripe_price_id: stripePriceId,
+        trial_days: plan.trialDays,
+        max_users: plan.maxUsers,
+        max_whatsapp_sessions: plan.maxWhatsappSessions,
+        max_monthly_appointments: plan.maxMonthlyAppointments,
+      },
+      create: {
+        name: plan.name,
+        code: plan.code,
+        description: plan.description,
+        price_monthly: plan.priceMonthly,
+        stripe_price_id: stripePriceId,
+        trial_days: plan.trialDays,
+        max_users: plan.maxUsers,
+        max_whatsapp_sessions: plan.maxWhatsappSessions,
+        max_monthly_appointments: plan.maxMonthlyAppointments,
+      },
+    });
+  }
 }
 
 seedPlans()
