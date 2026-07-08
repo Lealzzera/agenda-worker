@@ -1,0 +1,136 @@
+name: Deploy Backend Dev
+
+on:
+  push:
+    branches:
+      - dev
+      - develop
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+
+  ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+
+  ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+  ECS_SERVICE: ${{ vars.ECS_SERVICE }}
+  TASK_FAMILY: ${{ vars.TASK_FAMILY }}
+  CONTAINER_NAME: ${{ vars.CONTAINER_NAME }}
+
+  VPC_SUBNET_1: ${{ vars.VPC_SUBNET_1 }}
+  VPC_SUBNET_2: ${{ vars.VPC_SUBNET_2 }}
+  SECURITY_GROUP: ${{ vars.SECURITY_GROUP }}
+  
+jobs:
+  deploy:
+    name: Build, migrate and deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region $AWS_REGION \
+            | docker login \
+              --username AWS \
+              --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+
+      - name: Build Docker image
+        run: |
+          IMAGE_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:${{ github.sha }}
+          echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
+
+          docker build -t $IMAGE_URI .
+
+      - name: Push Docker image
+        run: |
+          docker push $IMAGE_URI
+
+      - name: Download current task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition $TASK_FAMILY \
+            --query taskDefinition \
+            > task-definition.json
+
+      - name: Create new task definition revision
+        run: |
+          jq \
+            --arg IMAGE "$IMAGE_URI" \
+            --arg CONTAINER_NAME "$CONTAINER_NAME" \
+            '
+            .containerDefinitions |= map(
+              if .name == $CONTAINER_NAME
+              then .image = $IMAGE
+              else .
+              end
+            )
+            | del(
+              .taskDefinitionArn,
+              .revision,
+              .status,
+              .requiresAttributes,
+              .compatibilities,
+              .registeredAt,
+              .registeredBy
+            )
+            ' task-definition.json > new-task-definition.json
+
+          TASK_DEF_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://new-task-definition.json \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+
+          echo "TASK_DEF_ARN=$TASK_DEF_ARN" >> $GITHUB_ENV
+
+      - name: Run Prisma migrations
+        run: |
+          TASK_ARN=$(aws ecs run-task \
+            --cluster $ECS_CLUSTER \
+            --launch-type FARGATE \
+            --task-definition $TASK_DEF_ARN \
+            --network-configuration "awsvpcConfiguration={subnets=[$VPC_SUBNET_1,$VPC_SUBNET_2],securityGroups=[$SECURITY_GROUP],assignPublicIp=DISABLED}" \
+            --overrides "{\"containerOverrides\":[{\"name\":\"$CONTAINER_NAME\",\"command\":[\"sh\",\"-c\",\"npx prisma migrate deploy\"]}]}" \
+            --query 'tasks[0].taskArn' \
+            --output text)
+
+          echo "Migration task: $TASK_ARN"
+
+          aws ecs wait tasks-stopped \
+            --cluster $ECS_CLUSTER \
+            --tasks $TASK_ARN
+
+          EXIT_CODE=$(aws ecs describe-tasks \
+            --cluster $ECS_CLUSTER \
+            --tasks $TASK_ARN \
+            --query 'tasks[0].containers[0].exitCode' \
+            --output text)
+
+          echo "Migration exit code: $EXIT_CODE"
+
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "Migration failed"
+            exit 1
+          fi
+
+      - name: Deploy new task definition to ECS service
+        run: |
+          aws ecs update-service \
+            --cluster $ECS_CLUSTER \
+            --service $ECS_SERVICE \
+            --task-definition $TASK_DEF_ARN
+
+      - name: Wait for ECS service to stabilize
+        run: |
+          aws ecs wait services-stable \
+            --cluster $ECS_CLUSTER \
+            --services $ECS_SERVICE
