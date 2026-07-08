@@ -9,7 +9,7 @@ FROM node:22-alpine AS build
 
 WORKDIR /app
 
-ENV DATABASE_URL="postgresql://user:password@localhost:5432/agenda_worker"
+RUN DATABASE_URL="postgresql://user:password@localhost:5432/agenda_worker" npm run build
 
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
@@ -24,13 +24,14 @@ FROM node:22-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV PORT=3333
+ENV PORT=3000
 
 COPY --from=production-dependencies /app/package*.json ./
 COPY --from=production-dependencies /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/prisma.config.ts ./prisma.config.ts
 
-EXPOSE 3333
+EXPOSE 3000
 
 CMD ["node", "dist/server.js"]
