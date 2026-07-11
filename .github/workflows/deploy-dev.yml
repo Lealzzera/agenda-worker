@@ -10,7 +10,7 @@ permissions:
   packages: write
 
 env:
-  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/agenda-worker
+  IMAGE_NAME: ghcr.io/lealzzera/agenda-worker
 
 jobs:
   build-and-deploy:
