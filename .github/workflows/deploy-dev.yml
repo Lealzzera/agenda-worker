@@ -54,4 +54,4 @@ jobs:
             -o IdentitiesOnly=yes \
             -i ~/.ssh/hetzner \
             "${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}" \
-            'cd /opt/agenda-worker && docker compose pull backend && docker compose up -d backend'
+            'cd /opt/blinki && docker compose pull backend && docker compose up -d backend'
