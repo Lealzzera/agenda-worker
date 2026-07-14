@@ -51,10 +51,13 @@ jobs:
       - name: Atualizar backend
         run: |
           ssh \
-            -o IdentitiesOnly=yes \
-            -i ~/.ssh/hetzner \
-            "${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}" \
-            'cd /opt/blinki && \
-             docker compose pull backend && \
-             docker compose up -d --no-deps backend && \
-             docker image prune -f'
+          -o IdentitiesOnly=yes \
+          -i ~/.ssh/hetzner \
+          "${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}" \
+          'set -e
+            cd /opt/blinki
+            docker compose pull backend
+            docker compose run --rm --no-deps backend npx prisma migrate deploy
+            docker compose run --rm --no-deps backend npm run seed:plans
+            docker compose up -d --no-deps --force-recreate backend
+            docker image prune -f'
