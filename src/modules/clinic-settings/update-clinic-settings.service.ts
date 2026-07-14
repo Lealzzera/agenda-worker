@@ -36,6 +36,7 @@ export class UpdateClinicSettingsService {
     allowRescheduling,
     allowCancellation,
     aiAgentName,
+    aiCustomPrompt,
     additionalInformation,
     clinicName,
     clinicType,
@@ -90,6 +91,7 @@ export class UpdateClinicSettingsService {
         allowRescheduling,
         allowCancellation,
         aiAgentName,
+        aiCustomPrompt,
         additionalInformation,
       },
     );

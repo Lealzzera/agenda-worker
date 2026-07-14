@@ -1,6 +1,8 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import makeListClinicSettingsServiceFactory from "./factories/make-list-clinic-settings-service.factory";
+import makeListClinicAiPromptServiceFactory from "./factories/make-list-clinic-ai-prompt-service.factory";
+import makeUpdateClinicAiPromptServiceFactory from "./factories/make-update-clinic-ai-prompt-service.factory";
 import makeUpdateClinicSettingsServiceFactory from "./factories/make-update-clinic-settings-service.factory";
 
 const clinicTypeSchema = z.enum([
@@ -23,6 +25,38 @@ export async function listClinicSettingsController(
   return res.status(200).send(clinicSettings);
 }
 
+export async function listClinicAiPromptController(
+  req: FastifyRequest,
+  res: FastifyReply,
+) {
+  const { clinicId } = req.params as { clinicId: string };
+
+  const listClinicAiPromptService = makeListClinicAiPromptServiceFactory();
+  const clinicAiPrompt = await listClinicAiPromptService.exec({ clinicId });
+
+  return res.status(200).send(clinicAiPrompt);
+}
+
+export async function updateClinicAiPromptController(
+  req: FastifyRequest,
+  res: FastifyReply,
+) {
+  const updateClinicAiPromptBodySchema = z.object({
+    prompt: z.string().max(6000),
+  });
+
+  const { clinicId } = req.params as { clinicId: string };
+  const { prompt } = updateClinicAiPromptBodySchema.parse(req.body);
+
+  const updateClinicAiPromptService = makeUpdateClinicAiPromptServiceFactory();
+  const clinicAiPrompt = await updateClinicAiPromptService.exec({
+    clinicId,
+    prompt,
+  });
+
+  return res.status(200).send(clinicAiPrompt);
+}
+
 export async function updateClinicSettingsController(
   req: FastifyRequest,
   res: FastifyReply,
@@ -35,6 +69,7 @@ export async function updateClinicSettingsController(
     allowRescheduling: z.boolean(),
     allowCancellation: z.boolean(),
     aiAgentName: z.string(),
+    aiCustomPrompt: z.string().max(6000).nullable().optional(),
     additionalInformation: z.string().nullable().optional(),
     clinicName: z.string().optional(),
     clinicType: clinicTypeSchema.optional(),
@@ -54,6 +89,7 @@ export async function updateClinicSettingsController(
     allowRescheduling,
     allowCancellation,
     aiAgentName,
+    aiCustomPrompt,
     additionalInformation,
     clinicName,
     clinicType,
@@ -70,6 +106,7 @@ export async function updateClinicSettingsController(
     allowCancellation,
     allowRescheduling,
     appointmentDurationMinutes,
+    aiCustomPrompt,
     additionalInformation,
     chargesEvaluation,
     evaluationPriceCents,
