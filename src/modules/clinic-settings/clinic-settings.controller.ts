@@ -42,7 +42,7 @@ export async function updateClinicAiPromptController(
   res: FastifyReply,
 ) {
   const updateClinicAiPromptBodySchema = z.object({
-    prompt: z.string().max(6000),
+    prompt: z.string(),
   });
 
   const { clinicId } = req.params as { clinicId: string };
