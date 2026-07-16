@@ -11,7 +11,7 @@ async function setWahaPresence({
   chatId: string;
   presence: WahaPresence;
 }) {
-  const response = await fetch(`${env.WAHA_URL}/api/${session}/presence`, {
+  const response = await fetch(`${env.WAHA_URL}/${session}/presence`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -25,9 +25,7 @@ async function setWahaPresence({
 
   if (!response.ok) {
     const errorBody = await response.text();
-    throw new Error(
-      `WAHA presence failed: ${response.status} ${errorBody}`,
-    );
+    throw new Error(`WAHA presence failed: ${response.status} ${errorBody}`);
   }
 }
 
