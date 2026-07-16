@@ -3,6 +3,7 @@ import { NotFoundError } from "@/errors/not-found.error";
 import { WhatsAppConversation } from "@prisma/client";
 import { IClinicRepository } from "../clinics/repositories/clinic-repository.interface";
 import { IWhatsappConversationsRepository } from "./repositories/whatsapp-conversations-repository.interface";
+import { clearAiConversationHistory } from "../ai/ai-conversation-memory";
 
 interface ICreateWhatsappConversationRequest {
   chatId: string;
@@ -29,12 +30,13 @@ export class CreateWhatsappConversationService {
       prisma,
       clinicId,
     );
-
     if (!doesTheClinicExist) {
       throw new NotFoundError("Clinic not found");
     }
 
     const phoneNumberFormatted = phoneNumber.replace(/\D/g, "");
+
+    clearAiConversationHistory(`${clinicId}-${session}-${chatId}`);
 
     const conversation =
       await this.whatsappConversationRepository.upsertWhatsappConversation(

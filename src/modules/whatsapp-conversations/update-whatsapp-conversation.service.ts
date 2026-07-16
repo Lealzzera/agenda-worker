@@ -1,6 +1,7 @@
 import { prisma } from "@/db/prisma";
 import { NotFoundError } from "@/errors/not-found.error";
 import { IWhatsappConversationsRepository } from "./repositories/whatsapp-conversations-repository.interface";
+import { clearAiConversationHistory } from "../ai/ai-conversation-memory";
 
 interface IUpdateWhatsappConversationRequest {
   id: string;
@@ -30,12 +31,15 @@ export class UpdateWhatsappConversationService {
       throw new NotFoundError("Conversation not found");
     }
 
-    await this.whatsappConversationRepository.updateWhatsappConversations(
-      prisma,
-      {
-        aiEnabled,
-        id,
-      },
-    );
+    const conversation =
+      await this.whatsappConversationRepository.updateWhatsappConversations(
+        prisma,
+        {
+          aiEnabled,
+          id,
+        },
+      );
+
+    clearAiConversationHistory(`${clinicId}-${conversation.session}-${chatId}`);
   }
 }

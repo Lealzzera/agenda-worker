@@ -25,6 +25,10 @@ export function getAiConversationHistory(conversationKey: string) {
   return conversationMemory.get(conversationKey) ?? [];
 }
 
+export function clearAiConversationHistory(conversationKey: string) {
+  return conversationMemory.delete(conversationKey);
+}
+
 export function appendAiConversationTurn({
   conversationKey,
   role,
