@@ -10,6 +10,7 @@ import { scheduleAiReplyJob } from "../ai/ai-reply.queue";
 import { broadcastToClinic } from "../realtime/realtime-broadcaster";
 import makeFindWhatsappConversationFactory from "../whatsapp-conversations/factories/make-find-whatsapp-conversation.factory";
 import { isWhatsappConversationAiEnabled } from "../whatsapp-conversations/is-whatsapp-conversation-ai-enabled";
+import { startWahaTyping } from "../ai/waha-presence.service";
 
 const WAHA_LOOKUP_TIMEOUT_MS = 1500;
 
@@ -177,7 +178,6 @@ export async function wahaWebhookController(
 
   const rawBody = JSON.stringify(req.body);
 
-
   const calculatedHmac = crypto
     .createHmac(algorithm, env.WAHA_WEBHOOK_SECRET)
     .update(rawBody)
@@ -219,7 +219,7 @@ export async function wahaWebhookController(
         });
         break;
       case "message.any":
-        console.log(body)
+        console.log(body);
         const findWhatsappConversationService =
           makeFindWhatsappConversationFactory();
         if (body.payload?._data.Info?.IsGroup) {
@@ -258,7 +258,6 @@ export async function wahaWebhookController(
             if (!aiEnabled) {
               break;
             }
-
             scheduleAiReplyJob({
               clinicId,
               session: messageInfo.session,

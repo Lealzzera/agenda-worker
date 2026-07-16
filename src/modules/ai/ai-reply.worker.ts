@@ -14,6 +14,7 @@ import {
 import { AI_REPLY_QUEUE_NAME } from "./ai-reply.queue";
 import { createOpenAiTextResponse } from "./openai-client";
 import { sendWahaAiMessage } from "./waha-ai-message.service";
+import { stopWahaTyping } from "./waha-presence.service";
 
 let aiReplyWorker: BullMqWorker<AiReplyJob> | null = null;
 
@@ -51,40 +52,65 @@ export async function startAiReplyWorker() {
           clinicId: job.data.clinicId,
           chatId: job.data.chatId,
         });
+        try {
+          await stopWahaTyping({
+            session: job.data.session,
+            chatId: job.data.chatId,
+          });
+        } catch (error) {
+          console.error("Failed to stop WAHA typing presence", {
+            jobId: job.id,
+            error,
+          });
+        }
         return;
       }
 
       const conversationHistory = getAiConversationHistory(conversationKey);
 
-      const { instructions, input } = await buildAiReplyPrompt({
-        job: job.data,
-        currentDate: new Date(),
-        conversationHistory,
-      });
+      try {
+        const { instructions, input } = await buildAiReplyPrompt({
+          job: job.data,
+          currentDate: new Date(),
+          conversationHistory,
+        });
 
-      const aiReply = await createOpenAiTextResponse({
-        instructions,
-        input,
-        tools: [...aiToolsList],
-        executeTool: executeAiSchedulingTool,
-      });
+        const aiReply = await createOpenAiTextResponse({
+          instructions,
+          input,
+          tools: [...aiToolsList],
+          executeTool: executeAiSchedulingTool,
+        });
 
-      await sendWahaAiMessage({
-        session: job.data.session,
-        chatId: job.data.chatId,
-        text: aiReply,
-      });
+        await sendWahaAiMessage({
+          session: job.data.session,
+          chatId: job.data.chatId,
+          text: aiReply,
+        });
 
-      appendAiConversationTurn({
-        conversationKey,
-        role: "user",
-        content: job.data.message,
-      });
-      appendAiConversationTurn({
-        conversationKey,
-        role: "assistant",
-        content: aiReply,
-      });
+        appendAiConversationTurn({
+          conversationKey,
+          role: "user",
+          content: job.data.message,
+        });
+        appendAiConversationTurn({
+          conversationKey,
+          role: "assistant",
+          content: aiReply,
+        });
+      } finally {
+        try {
+          await stopWahaTyping({
+            session: job.data.session,
+            chatId: job.data.chatId,
+          });
+        } catch (error) {
+          console.error("Failed to stop WAHA typing presence", {
+            jobId: job.id,
+            error,
+          });
+        }
+      }
     },
     {
       connection: redisConnection,

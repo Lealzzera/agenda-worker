@@ -1,10 +1,11 @@
 import { redisConnection } from "@/queues/redis-connection";
 import { AiReplyJob } from "@/types/types";
 import { Queue } from "bullmq";
+import { startWahaTyping } from "./waha-presence.service";
 
 export const AI_REPLY_QUEUE_NAME = "whatsapp-messages-pending-reply";
 
-const AI_REPLY_DEBOUNCE_MS = 15000;
+const AI_REPLY_DEBOUNCE_MS = 8000;
 
 let aiReplyQueue: Queue<AiReplyJob> | null = null;
 const pendingAiReplyJobs = new Map<
@@ -33,6 +34,16 @@ export function scheduleAiReplyJob(data: AiReplyJob) {
   const jobData = pendingJob
     ? mergePendingMessages(pendingJob.data, data)
     : data;
+
+  startWahaTyping({
+    session: data.session,
+    chatId: data.chatId,
+  }).catch((error) => {
+    console.error("Failed to start WAHA typing presence", {
+      jobId,
+      error,
+    });
+  });
 
   if (pendingJob) {
     clearTimeout(pendingJob.timeout);
