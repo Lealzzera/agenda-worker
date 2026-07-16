@@ -2,6 +2,7 @@ import { prisma } from "@/db/prisma";
 import { NotFoundError } from "@/errors/not-found.error";
 import { IWhatsappConversationsRepository } from "./repositories/whatsapp-conversations-repository.interface";
 import {
+  buildAiConversationKey,
   clearAiConversationHistory,
   getAiConversationHistory,
 } from "../ai/ai-conversation-memory";
@@ -43,11 +44,17 @@ export class UpdateWhatsappConversationService {
         },
       );
 
+    const conversationKey = buildAiConversationKey({
+      clinicId,
+      session: conversation.session,
+      chatId,
+    });
+
     console.log(
       "Dentro do UPDATE ---->",
-      getAiConversationHistory(`${clinicId}-${conversation.session}-${chatId}`),
+      getAiConversationHistory(conversationKey),
     );
 
-    clearAiConversationHistory(`${clinicId}-${conversation.session}-${chatId}`);
+    clearAiConversationHistory(conversationKey);
   }
 }

@@ -4,6 +4,7 @@ import { WhatsAppConversation } from "@prisma/client";
 import { IClinicRepository } from "../clinics/repositories/clinic-repository.interface";
 import { IWhatsappConversationsRepository } from "./repositories/whatsapp-conversations-repository.interface";
 import {
+  buildAiConversationKey,
   clearAiConversationHistory,
   getAiConversationHistory,
 } from "../ai/ai-conversation-memory";
@@ -39,11 +40,17 @@ export class CreateWhatsappConversationService {
 
     const phoneNumberFormatted = phoneNumber.replace(/\D/g, "");
 
-    clearAiConversationHistory(`${clinicId}-${session}-${chatId}`);
+    const conversationKey = buildAiConversationKey({
+      clinicId,
+      session,
+      chatId,
+    });
+
+    clearAiConversationHistory(conversationKey);
 
     console.log(
       "Dentro do create ---->",
-      getAiConversationHistory(`${clinicId}-${session}-${chatId}`),
+      getAiConversationHistory(conversationKey),
     );
 
     const conversation =

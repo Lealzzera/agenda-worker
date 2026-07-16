@@ -1,5 +1,6 @@
 import { prisma } from "@/db/prisma";
 import {
+  buildAiConversationKey,
   clearAiConversationHistory,
   getAiConversationHistory,
 } from "@/modules/ai/ai-conversation-memory";
@@ -562,12 +563,18 @@ async function handoffToHumanFromAi({
     });
   }
 
+  const conversationKey = buildAiConversationKey({
+    clinicId,
+    session,
+    chatId,
+  });
+
   console.log(
     "dentro do handoff --->",
-    getAiConversationHistory(`${clinicId}:${session}:${chatId}`),
+    getAiConversationHistory(conversationKey),
   );
 
-  clearAiConversationHistory(`${clinicId}:${session}:${chatId}`);
+  clearAiConversationHistory(conversationKey);
 
   return {
     ok: true,
