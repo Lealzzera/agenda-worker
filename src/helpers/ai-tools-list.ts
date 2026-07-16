@@ -1,4 +1,8 @@
 import { prisma } from "@/db/prisma";
+import {
+  clearAiConversationHistory,
+  getAiConversationHistory,
+} from "@/modules/ai/ai-conversation-memory";
 import { makeCreateAppointmentServiceFactory } from "@/modules/appointments/factories/make-create-appointment-service.factory";
 import makeCreateWhatsappConversation from "@/modules/whatsapp-conversations/factories/make-create-whatsapp-conversation.factory";
 import makeFindWhatsappConversationFactory from "@/modules/whatsapp-conversations/factories/make-find-whatsapp-conversation.factory";
@@ -384,7 +388,10 @@ async function findRoundedAvailableTimes({
   return suggestedTimes;
 }
 
-async function getAppointmentPeriods(clinicId: string, appointmentDate: string) {
+async function getAppointmentPeriods(
+  clinicId: string,
+  appointmentDate: string,
+) {
   const specialDates = await prisma.clinicSpecialDate.findMany({
     where: {
       clinic_id: clinicId,
@@ -413,7 +420,8 @@ async function getAppointmentPeriods(clinicId: string, appointmentDate: string) 
     return openSpecialDatePeriods;
   }
 
-  const weekday = WEEKDAY_BY_INDEX[buildAppointmentDate(appointmentDate, "00:00").getDay()];
+  const weekday =
+    WEEKDAY_BY_INDEX[buildAppointmentDate(appointmentDate, "00:00").getDay()];
   const workingHours = await prisma.clinicWorkingHour.findMany({
     where: {
       clinic_id: clinicId,
@@ -553,6 +561,13 @@ async function handoffToHumanFromAi({
       aiEnabled: false,
     });
   }
+
+  console.log(
+    "dentro do handoff --->",
+    getAiConversationHistory(`${clinicId}:${session}:${chatId}`),
+  );
+
+  clearAiConversationHistory(`${clinicId}:${session}:${chatId}`);
 
   return {
     ok: true,

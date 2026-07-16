@@ -3,7 +3,10 @@ import { NotFoundError } from "@/errors/not-found.error";
 import { WhatsAppConversation } from "@prisma/client";
 import { IClinicRepository } from "../clinics/repositories/clinic-repository.interface";
 import { IWhatsappConversationsRepository } from "./repositories/whatsapp-conversations-repository.interface";
-import { clearAiConversationHistory } from "../ai/ai-conversation-memory";
+import {
+  clearAiConversationHistory,
+  getAiConversationHistory,
+} from "../ai/ai-conversation-memory";
 
 interface ICreateWhatsappConversationRequest {
   chatId: string;
@@ -37,6 +40,11 @@ export class CreateWhatsappConversationService {
     const phoneNumberFormatted = phoneNumber.replace(/\D/g, "");
 
     clearAiConversationHistory(`${clinicId}-${session}-${chatId}`);
+
+    console.log(
+      "Dentro do create ---->",
+      getAiConversationHistory(`${clinicId}-${session}-${chatId}`),
+    );
 
     const conversation =
       await this.whatsappConversationRepository.upsertWhatsappConversation(

@@ -1,7 +1,10 @@
 import { prisma } from "@/db/prisma";
 import { NotFoundError } from "@/errors/not-found.error";
 import { IWhatsappConversationsRepository } from "./repositories/whatsapp-conversations-repository.interface";
-import { clearAiConversationHistory } from "../ai/ai-conversation-memory";
+import {
+  clearAiConversationHistory,
+  getAiConversationHistory,
+} from "../ai/ai-conversation-memory";
 
 interface IUpdateWhatsappConversationRequest {
   id: string;
@@ -39,6 +42,11 @@ export class UpdateWhatsappConversationService {
           id,
         },
       );
+
+    console.log(
+      "Dentro do UPDATE ---->",
+      getAiConversationHistory(`${clinicId}-${conversation.session}-${chatId}`),
+    );
 
     clearAiConversationHistory(`${clinicId}-${conversation.session}-${chatId}`);
   }
