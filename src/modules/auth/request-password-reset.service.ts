@@ -57,11 +57,13 @@ export class RequestPasswordResetService {
     await transporter.sendMail({
       from: env.SMTP_FROM,
       to: user.email,
-      subject: "Redefinicao de senha",
-      text: `Acesse este link para redefinir sua senha: ${resetUrl}`,
+      subject: "Redefinição de senha (Não responda)",
+      text: `Acesse este link para redefinir sua senha blinki: ${resetUrl}`,
       html: `
         <h1>Redefinir senha</h1>
-        <p>Recebemos uma solicitacao para redefinir sua senha.</p>
+        <p>Recebemos uma solicitação para redefinir sua senha do sistema blinki.</p>
+        <p>Se você não solicitou a redefinição de senha, ignore este e-mail.</p>
+        <p>Para redefinir sua senha, clique no link abaixo:</p>
         <p>Este link expira em 30 minutos.</p>
         <a href="${resetUrl}">Redefinir minha senha</a>
       `,
