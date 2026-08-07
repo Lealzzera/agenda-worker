@@ -69,6 +69,7 @@ export async function registerClinicController(
     workingHours: z.array(workingHourSchema).optional(),
     services: z.array(serviceSchema).optional(),
     settings: settingsSchema.optional(),
+    acceptedTerms: z.boolean(),
   });
 
   const data = registerClinicSchema.parse(req.body);
@@ -84,6 +85,7 @@ export async function registerClinicController(
     services,
     settings,
     additionalInformation,
+    acceptedTerms,
   } = data;
 
   const userPictureUrl = data.userPictureUrl || undefined;
@@ -121,6 +123,7 @@ export async function registerClinicController(
               additionalInformation?.trim() || settings?.additionalInformation,
           }
         : undefined,
+    acceptedTerms,
   });
 
   return res.status(201).send({ message: "Clinic created successfully" });
