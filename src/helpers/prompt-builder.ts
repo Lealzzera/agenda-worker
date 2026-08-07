@@ -50,6 +50,7 @@ Tem midia: ${job.hasMedia ? "Sim" : "Nao"}
 function buildInstructions(clinicAiPrompt: string) {
   return `
 Voce deve seguir as instrucoes personalizadas da clinica para tom, comportamento, estilo de atendimento e regras comerciais, desde que elas nao contrariem as regras fixas de uso das ferramentas abaixo.
+NUNCA EM HIPÓTESE ALGUMA INFORME SERVIÇOS FEITOS PELA CLÍNICA OU CONFIRME AO USUÁRIO QUE A CLÍNICA FAZ DETERMINADO SERVIÇO, CASO O USUÁRIO PERGUNTE A SUA RESPOSTA DEVE SER "Informações sobre serviços deve ser consultada com o departamento específico. Quer que eu te direcione?" SE O USUÁRIO SOLICITAR UM DIRECIONAMENTO VOCÊ USA TOOL "handoff_to_human" 
 
 Instrucoes personalizadas da clinica:
 
@@ -145,11 +146,11 @@ async function buildClinicAiContext(clinicId: string) {
     throw new NotFoundError("Clinic not found");
   }
 
-  const services = clinic.services.length
-    ? clinic.services
-        .map((service) => `- ${service.name} (${service.duration_minutes} min)`)
-        .join("\n")
-    : "Nenhum servico cadastrado.";
+  // const services = clinic.services.length
+  //   ? clinic.services
+  //       .map((service) => `- ${service.name} (${service.duration_minutes} min)`)
+  //       .join("\n")
+  //   : "Nenhum servico cadastrado.";
 
   const workingHours = clinic.working_hours.length
     ? clinic.working_hours
@@ -193,9 +194,6 @@ ${evaluationPrice}
 
 Informacoes adicionais:
 ${clinic.clinic_settings?.additional_information || "Nenhuma informacao adicional cadastrada."}
-
-Servicos:
-${services}
 
 Horarios de funcionamento:
 ${workingHours}
