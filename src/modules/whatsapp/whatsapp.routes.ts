@@ -35,7 +35,15 @@ export async function whatsappRoutes(app: FastifyInstance) {
       return getChatMessagesController(req, res);
     },
   );
-  app.post("/webhook", async (req, res) => {
-    return wahaWebhookController(req, res);
+  app.register(async (webhookScope) => {
+    webhookScope.addContentTypeParser(
+      "application/json",
+      { parseAs: "buffer" },
+      (_req, body, done) => done(null, body),
+    );
+
+    webhookScope.post("/webhook", async (req, res) => {
+      return wahaWebhookController(req, res);
+    });
   });
 }

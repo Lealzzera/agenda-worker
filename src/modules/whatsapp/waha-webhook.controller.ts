@@ -1,3 +1,4 @@
+import { prisma } from "@/db/prisma";
 import { env } from "@/env";
 import {
   WahaMessageAckPayload,
@@ -10,7 +11,6 @@ import { scheduleAiReplyJob } from "../ai/ai-reply.queue";
 import { broadcastToClinic } from "../realtime/realtime-broadcaster";
 import makeFindWhatsappConversationFactory from "../whatsapp-conversations/factories/make-find-whatsapp-conversation.factory";
 import { isWhatsappConversationAiEnabled } from "../whatsapp-conversations/is-whatsapp-conversation-ai-enabled";
-import { startWahaTyping } from "../ai/waha-presence.service";
 
 const WAHA_LOOKUP_TIMEOUT_MS = 1500;
 
@@ -36,6 +36,17 @@ async function resolveClinicIdFromWebhook(body: WahaWebhookBody) {
   if (!body.session) {
     return null;
   }
+
+  const session = await prisma.whatsAppSession.findUnique({
+    where: {
+      session_name: body.session,
+    },
+    select: {
+      clinic_id: true,
+    },
+  });
+
+  return session?.clinic_id ?? null;
 }
 
 async function resolvePhoneChatId(sessionName: string, chatId: string) {
@@ -167,6 +178,9 @@ export async function wahaWebhookController(
   req: FastifyRequest,
   res: FastifyReply,
 ) {
+  const rawBody = Buffer.isBuffer(req.body)
+    ? req.body
+    : Buffer.from(JSON.stringify(req.body ?? {}));
   const signature = req.headers["x-webhook-hmac"] as string;
   const algorithm = req.headers["x-webhook-hmac-algorithm"] as string;
 
@@ -176,14 +190,15 @@ export async function wahaWebhookController(
     });
   }
 
-  const rawBody = JSON.stringify(req.body);
-
   const calculatedHmac = crypto
     .createHmac(algorithm, env.WAHA_WEBHOOK_SECRET)
     .update(rawBody)
     .digest("hex");
 
-  if (signature.length !== calculatedHmac.length) {
+  const signatureBuffer = Buffer.from(signature, "hex");
+  const calculatedHmacBuffer = Buffer.from(calculatedHmac, "hex");
+
+  if (signatureBuffer.length !== calculatedHmacBuffer.length) {
     console.log("Invalid webhook signature");
     return res.status(401).send({
       message: "Invalid webhook signature",
@@ -191,8 +206,8 @@ export async function wahaWebhookController(
   }
 
   const isValid = crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(calculatedHmac),
+    signatureBuffer,
+    calculatedHmacBuffer,
   );
 
   if (!isValid) {
@@ -208,7 +223,11 @@ export async function wahaWebhookController(
     });
   }
 
-  const body = req.body as WahaWebhookBody;
+  const body = (
+    Buffer.isBuffer(req.body)
+      ? JSON.parse(rawBody.toString("utf8"))
+      : req.body
+  ) as WahaWebhookBody;
   const clinicId = await resolveClinicIdFromWebhook(body);
   if (clinicId) {
     switch (body.event) {
@@ -222,17 +241,21 @@ export async function wahaWebhookController(
         console.log(body);
         const findWhatsappConversationService =
           makeFindWhatsappConversationFactory();
-        if (body.payload?._data.Info?.IsGroup) {
-          return;
+        if (body.payload?._data?.Info?.IsGroup) {
+          return res.status(200).send({
+            ok: true,
+            message: "Group message ignored",
+          });
         }
         const messageInfo = await formatMessagePayload(
           body as unknown as WahaMessagePayload,
         );
+        const chatId = messageInfo.phoneChatId ?? messageInfo.sourceChatId;
 
         let conversation = null;
-        if (!messageInfo.fromMe) {
+        if (!messageInfo.fromMe && chatId) {
           conversation = await findWhatsappConversationService.exec({
-            chatId: messageInfo.phoneChatId!,
+            chatId,
             clinicId,
           });
         }
@@ -241,14 +264,18 @@ export async function wahaWebhookController(
           event: "message_any",
           payload: messageInfo,
         });
-        if (conversation && !conversation.aiEnabled) return;
+        if (conversation && !conversation.aiEnabled) {
+          return res.status(200).send({
+            ok: true,
+            message: "AI disabled for this conversation",
+          });
+        }
         if (
           !messageInfo.fromMe &&
-          messageInfo.message.trim() &&
-          (messageInfo.phoneChatId || messageInfo.sourceChatId)
+          messageInfo.message?.trim() &&
+          chatId
         ) {
           try {
-            const chatId = messageInfo.phoneChatId ?? messageInfo.sourceChatId;
             const aiEnabled = await isWhatsappConversationAiEnabled({
               clinicId,
               session: messageInfo.session,

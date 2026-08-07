@@ -4,6 +4,94 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import { ClinicRepository } from "../clinics/repositories/clinic-repository";
 
+type WahaSession = {
+  name: string;
+  status?: string;
+  me?: {
+    id?: string;
+  };
+};
+
+function buildWahaSessionConfig(clinicId: string) {
+  return {
+    metadata: {
+      clinicId,
+    },
+    noweb: {
+      store: {
+        enabled: true,
+        fullSync: true,
+      },
+    },
+    webhooks: [
+      {
+        url: env.WAHA_WEBHOOK_URL,
+        events: [
+          "message.any",
+          "session.status",
+          "message.ack",
+          "message.reaction",
+          "presence.update",
+          "message.waiting",
+        ],
+        hmac: {
+          key: env.WAHA_WEBHOOK_SECRET,
+        },
+        retries: {
+          delaySeconds: 2,
+          attempts: 5,
+          policy: "linear",
+        },
+        customHeaders: [
+          {
+            name: "X-Request-ID",
+            value: "123",
+          },
+        ],
+      },
+    ],
+  };
+}
+
+async function updateWahaSessionConfig(sessionName: string, clinicId: string) {
+  const response = await fetch(`${env.WAHA_URL}/sessions/${sessionName}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Api-Key": env.WAHA_API_KEY,
+    },
+    body: JSON.stringify({
+      name: sessionName,
+      config: buildWahaSessionConfig(clinicId),
+    }),
+  });
+
+  if (!response.ok) {
+    const responseBody = await response.text();
+    throw new Error(
+      `WAHA session config update failed: ${response.status} ${responseBody}`,
+    );
+  }
+}
+
+async function getQrCodeImage(sessionName: string) {
+  const qrCode = await fetch(
+    `${env.WAHA_URL}/${sessionName}/auth/qr?format=image`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Api-Key": env.WAHA_API_KEY,
+      },
+    },
+  );
+
+  const qrCodeBuffer = await qrCode.arrayBuffer();
+  const base64Image = Buffer.from(qrCodeBuffer).toString("base64");
+
+  return `data:image/png;base64,${base64Image}`;
+}
+
 export async function postQrCodeController(
   req: FastifyRequest,
   res: FastifyReply,
@@ -37,43 +125,32 @@ export async function postQrCodeController(
     });
 
     const getWahaSessionResultJson = await getWahaSession.json();
+    const existingSession = (getWahaSessionResultJson as WahaSession[]).find(
+      (session) => session.name === sessionName,
+    );
 
-    switch (
-      getWahaSessionResultJson.length &&
-      getWahaSessionResultJson[0].status
-    ) {
+    if (existingSession) {
+      await updateWahaSessionConfig(sessionName, clinicId);
+    }
+
+    switch (existingSession?.status) {
       case "WORKING":
-        const formattedPhoneNumber = getWahaSessionResultJson[0].me.id.replace(
+        const formattedPhoneNumber = existingSession.me?.id?.replace(
           /^(\d{2})(\d{2})(\d{5})(\d{4})@c\.us$/,
           "+$1 $2 $3-$4",
         );
         return res.status(200).send({
-          sessionName: getWahaSessionResultJson[0].name,
-          status: getWahaSessionResultJson[0].status,
+          sessionName: existingSession.name,
+          status: existingSession.status,
           me: {
-            ...getWahaSessionResultJson[0].me,
-            id: formattedPhoneNumber,
+            ...existingSession.me,
+            id: formattedPhoneNumber ?? existingSession.me?.id,
           },
         });
 
       case "SCAN_QR_CODE":
-        const qrCode = await fetch(
-          `${env.WAHA_URL}/${sessionName}/auth/qr?format=image`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              "X-Api-Key": env.WAHA_API_KEY,
-            },
-          },
-        );
-
-        const qrCodeBuffer = await qrCode.arrayBuffer();
-        const base64Image = Buffer.from(qrCodeBuffer).toString("base64");
-        const imageUrl = `data:image/png;base64,${base64Image}`;
-
         return res.status(200).send({
-          qrCode: imageUrl,
+          qrCode: await getQrCodeImage(sessionName),
         });
 
       case "FAILED":
@@ -98,50 +175,15 @@ export async function postQrCodeController(
       body: JSON.stringify({
         name: sessionName,
         start: true,
-        config: {
-          metadata: {
-            clinicId,
-          },
-          noweb: {
-            store: {
-              enabled: true,
-              fullSync: true,
-            },
-          },
-          webhooks: [
-            {
-              url: env.WAHA_WEBHOOK_URL,
-              events: [
-                "message.any",
-                "session.status",
-                "message.ack",
-                "message.reaction",
-                "presence.update",
-                "message.waiting",
-              ],
-              hmac: {
-                key: env.WAHA_WEBHOOK_SECRET,
-              },
-              retries: {
-                delaySeconds: 2,
-                attempts: 5,
-                policy: "linear",
-              },
-              customHeaders: [
-                {
-                  name: "X-Request-ID",
-                  value: "123",
-                },
-              ],
-            },
-          ],
-        },
+        config: buildWahaSessionConfig(clinicId),
       }),
     });
 
     const responseJson = await wahaSession.json();
 
     if (responseJson.statusCode === 422) {
+      await updateWahaSessionConfig(sessionName, clinicId);
+
       const restartSession = await fetch(
         `${env.WAHA_URL}/sessions/${sessionName}/restart`,
         {
@@ -155,40 +197,16 @@ export async function postQrCodeController(
 
       await restartSession.json();
 
-      const qrCode = await fetch(
-        `${env.WAHA_URL}/${sessionName}/auth/qr?format=image`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Api-Key": env.WAHA_API_KEY,
-          },
-        },
-      );
-
-      const arrayBuffer = await qrCode.arrayBuffer();
-      const base64Image = Buffer.from(arrayBuffer).toString("base64");
-      const imageUrl = `data:image/png;base64,${base64Image}`;
-
-      return { qrCode: imageUrl };
+      return res.status(200).send({
+        qrCode: await getQrCodeImage(sessionName),
+      });
     }
-    const qrCode = await fetch(
-      `${env.WAHA_URL}/${sessionName}/auth/qr?format=image`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Api-Key": env.WAHA_API_KEY,
-        },
-      },
-    );
 
-    const arrayBuffer = await qrCode.arrayBuffer();
-    const base64Image = Buffer.from(arrayBuffer).toString("base64");
-    const imageUrl = `data:image/png;base64,${base64Image}`;
-
-    return { qrCode: imageUrl };
+    return res.status(200).send({
+      qrCode: await getQrCodeImage(sessionName),
+    });
   } catch (error) {
+    req.log.error(error, "Failed to create or update WAHA session");
     return res.status(500).send({ error: "Internal server error" });
   }
 }
