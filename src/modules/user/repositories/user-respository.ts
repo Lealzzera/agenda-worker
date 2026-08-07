@@ -5,7 +5,13 @@ import { ICreateUser, IUserRepository } from "./user-repository.interface";
 export class UserRepository implements IUserRepository {
   async create(
     client: PrismaClientOrTx,
-    { full_name, email, password_hash, picture_url }: ICreateUser,
+    {
+      full_name,
+      email,
+      password_hash,
+      picture_url,
+      acceptedTerms,
+    }: ICreateUser,
   ): Promise<User> {
     const data = await client.user.create({
       data: {
@@ -13,6 +19,7 @@ export class UserRepository implements IUserRepository {
         email,
         password_hash,
         picture_url,
+        accepted_terms: acceptedTerms,
       },
     });
     return data;

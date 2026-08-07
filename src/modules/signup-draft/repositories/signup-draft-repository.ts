@@ -17,6 +17,7 @@ export class SignupDraftRepository implements ISignupDraftRepository {
       data,
       stripeCheckoutSessionId,
       status,
+      acceptedTerms,
     }: CreateSignupDraft,
   ): Promise<SignupDraft> {
     const draftSignUp = await client.signupDraft.upsert({
@@ -30,6 +31,7 @@ export class SignupDraftRepository implements ISignupDraftRepository {
         data: data as unknown as Prisma.JsonObject,
         stripe_checkout_session_id: stripeCheckoutSessionId ?? null,
         status: status ?? "PENDING",
+        accepted_terms: acceptedTerms,
       },
       update: {
         expires_at: expiresAt,
@@ -39,6 +41,7 @@ export class SignupDraftRepository implements ISignupDraftRepository {
         data: data as unknown as Prisma.JsonObject,
         stripe_checkout_session_id: stripeCheckoutSessionId ?? null,
         status: status ?? "PENDING",
+        accepted_terms: acceptedTerms,
       },
     });
     return draftSignUp;

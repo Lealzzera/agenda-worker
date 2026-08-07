@@ -16,6 +16,7 @@ type RegisterUserClinicData = {
   password_hash: string;
   full_name: string;
   selected_plan_id: string;
+  accepted_terms: boolean;
   data: {
     city: string;
     phone: string;
@@ -57,6 +58,8 @@ export class RegisterUserClinicAccountService {
       throw new Error("Draft not found");
     }
 
+    console.log(draftFromDatabase);
+
     const userClinicRegistered = await registerClinicService.exec({
       clinicName: draftFromDatabase.data.clinicName,
       userFullName: draftFromDatabase.full_name,
@@ -80,6 +83,7 @@ export class RegisterUserClinicAccountService {
       stripeSubscriptionId,
       stripeCheckoutSessionId,
       lastStripeInvoiceId: lastStripeInvoiceId ?? undefined,
+      acceptedTerms: draftFromDatabase.accepted_terms,
     });
 
     await this.signupDraftRepository.delete(prisma, draftId);

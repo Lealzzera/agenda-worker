@@ -14,10 +14,18 @@ export async function registerUserController(
     clinicId: z.uuid(),
     pictureUrl: z.url().optional(),
     userRole: z.enum(["ADMIN", "OWNER", "MEMBER"]),
+    acceptedTerms: z.boolean(),
   });
 
-  const { clinicId, email, fullName, password, pictureUrl, userRole } =
-    registerUserBodySchema.parse(req.body);
+  const {
+    clinicId,
+    email,
+    fullName,
+    password,
+    pictureUrl,
+    userRole,
+    acceptedTerms,
+  } = registerUserBodySchema.parse(req.body);
 
   const registerUserService = makeRegisterUserServiceFactory();
   const user = await registerUserService.exec({
@@ -27,6 +35,7 @@ export async function registerUserController(
     password,
     pictureUrl,
     userRole,
+    acceptedTerms,
   });
 
   return res.status(201).send({ user });

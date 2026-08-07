@@ -16,6 +16,7 @@ export interface RegisterSignupDraftServiceRequest {
   data: SignupDraftData;
   stripeCheckoutSessionId?: string;
   status?: SignupDraftStatus;
+  acceptedTerms: boolean;
 }
 
 export class RegisterSignupDraftService {
@@ -32,7 +33,12 @@ export class RegisterSignupDraftService {
     data,
     stripeCheckoutSessionId,
     status,
+    acceptedTerms,
   }: RegisterSignupDraftServiceRequest) {
+    if (!acceptedTerms) {
+      throw new Error("You must accept the service terms and conditions.");
+    }
+
     const doesTheEmailExist = await this.userRepository.findByEmail(
       prisma,
       email,
@@ -55,6 +61,7 @@ export class RegisterSignupDraftService {
       stripeCheckoutSessionId,
       status,
       expiresAt,
+      acceptedTerms,
     });
   }
 }

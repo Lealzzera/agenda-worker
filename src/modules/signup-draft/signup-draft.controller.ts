@@ -42,11 +42,19 @@ export async function signupDraftController(
         evaluationPriceCents: z.number().optional(),
       }),
     }),
+    acceptedTerms: z.boolean(),
     status: z.enum(["PENDING", "COMPLETED", "EXPIRED"]).optional(),
   });
 
-  const { email, password, fullName, selectedPlanId, data, status } =
-    registerSignupDraftBodySchema.parse(req.body);
+  const {
+    email,
+    password,
+    fullName,
+    selectedPlanId,
+    data,
+    status,
+    acceptedTerms,
+  } = registerSignupDraftBodySchema.parse(req.body);
 
   const registerSignupDraftService = makeRegisterSignupDraftFactory();
   const draft = await registerSignupDraftService.exec({
@@ -56,6 +64,7 @@ export async function signupDraftController(
     selectedPlanId,
     data,
     status,
+    acceptedTerms,
   });
   return res.status(201).send({ draftId: draft.id });
 }

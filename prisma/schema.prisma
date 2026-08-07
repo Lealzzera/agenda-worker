@@ -18,6 +18,7 @@ model User {
   updated_at DateTime @updatedAt
   clinic_members ClinicMember[]
   password_reset_tokens PasswordResetToken[]
+  accepted_terms Boolean?
 
   @@index([status])
   @@map("users")
@@ -193,6 +194,7 @@ model SignupDraft {
   data Json
   stripe_checkout_session_id String? @unique
   status SignupDraftStatus @default(PENDING)
+  accepted_terms Boolean?
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
   expires_at DateTime?

@@ -30,6 +30,7 @@ export interface CreateSignupDraft {
   stripeCheckoutSessionId?: string;
   status?: SignupDraftStatus;
   expiresAt: Date;
+  acceptedTerms: boolean;
 }
 
 export interface UpdateSignupDraft {

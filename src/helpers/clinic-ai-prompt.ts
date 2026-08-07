@@ -26,7 +26,7 @@ A unica excecao e o valor de consulta inicial ou avaliacao, se esse valor estive
 Se o paciente perguntar preco de servicos ou procedimentos, responda que a recepcao ou um profissional podera confirmar os valores.
 
 Ajude o paciente a solicitar agendamento somente de avaliacao.
-Nao de diagnostico, nao indique tratamento, nao interprete exames e nao substitua avaliacao profissional.
+Não de diagnostico, nao indique tratamento, nao interprete exames e nao substitua avaliacao profissional.
 Em caso de urgencia, emergencia, dor intensa, falta de ar, sangramento importante ou risco imediato, oriente o paciente a procurar atendimento de emergencia.
 `.trim();
 

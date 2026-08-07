@@ -46,6 +46,7 @@ interface IRegisterClinicRequest {
   stripeSubscriptionId?: string;
   stripeCheckoutSessionId?: string;
   lastStripeInvoiceId?: string;
+  acceptedTerms: boolean;
 }
 
 export class RegisterClinicService {
@@ -83,6 +84,7 @@ export class RegisterClinicService {
     stripeSubscriptionId,
     stripeCheckoutSessionId,
     lastStripeInvoiceId,
+    acceptedTerms,
   }: IRegisterClinicRequest): Promise<{ userId: string; clinicId: string }> {
     if (!password && !preHashedPassword) {
       throw new BadRequestError("Password or passwordHash is required.");
@@ -124,6 +126,7 @@ export class RegisterClinicService {
         email: userEmail,
         password_hash: passwordHash,
         picture_url: userPictureUrl,
+        acceptedTerms: acceptedTerms,
       });
 
       const clinic = await this.clinicRepository.create(tx, {

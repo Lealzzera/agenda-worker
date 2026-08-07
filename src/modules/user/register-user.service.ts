@@ -16,6 +16,7 @@ interface RegisterUserRequest {
   password: string;
   pictureUrl?: string;
   userRole: ClinicRole;
+  acceptedTerms: boolean;
 }
 
 interface RegisterUserResponse {
@@ -25,6 +26,7 @@ interface RegisterUserResponse {
     email: string;
     pictureUrl: string | null;
     role: ClinicRole;
+    acceptedTerms: boolean;
   };
 }
 
@@ -44,7 +46,12 @@ export class RegisterUserService {
     password,
     pictureUrl,
     userRole,
+    acceptedTerms,
   }: RegisterUserRequest): Promise<RegisterUserResponse> {
+    if (!acceptedTerms) {
+      throw new Error("You must accept the terms and conditions.");
+    }
+
     const doesTheClinicExist = await this.clinicRepository.findById(
       prisma,
       clinicId,
@@ -104,6 +111,7 @@ export class RegisterUserService {
         email,
         password_hash: passwordHashed,
         picture_url: pictureUrl,
+        acceptedTerms,
       });
       await this.clinicMemberRepository.create(tx, {
         clinicId,
@@ -121,6 +129,7 @@ export class RegisterUserService {
         email: user.email,
         pictureUrl: user.picture_url,
         role: userRole,
+        acceptedTerms,
       },
     };
   }
