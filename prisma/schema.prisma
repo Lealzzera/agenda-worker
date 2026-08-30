@@ -172,7 +172,7 @@ model Plan {
   description String?
   code String @unique
   price_monthly Int
-  trial_days Int @default(7)
+  trial_days Int @default(3)
   max_users Int? @default(1)
   max_whatsapp_sessions Int? @default(1)
   max_monthly_appointments Int? @default(50)
