@@ -7,12 +7,12 @@ export async function clinicRoutes(app: FastifyInstance) {
   app.post(
     "/register",
     { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } },
-    async (req, res) => await registerClinicController(req, res)
+    async (req, res) => await registerClinicController(req, res),
   );
 
   app.get(
     "/me",
     { preHandler: [verifyJwt] },
-    async (req, res) => await getMyClinicController(req, res)
+    async (req, res) => await getMyClinicController(req, res),
   );
 }
