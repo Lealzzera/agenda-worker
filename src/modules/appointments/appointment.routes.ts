@@ -1,3 +1,4 @@
+import { requireActiveSubscription } from "@/middlewares/require-active-subscription";
 import { verifyJwt } from "@/middlewares/verify-jwt";
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import {
@@ -10,6 +11,7 @@ import {
 export async function appointmentRoutes(app: FastifyInstance) {
   app.register(async function (protectedRoutes) {
     protectedRoutes.addHook("preHandler", verifyJwt);
+    protectedRoutes.addHook("preHandler", requireActiveSubscription);
 
     protectedRoutes.post(
       "/",

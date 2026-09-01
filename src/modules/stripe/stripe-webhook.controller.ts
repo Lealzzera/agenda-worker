@@ -1,96 +1,68 @@
+import { prisma } from "@/db/prisma";
 import { env } from "@/env";
+import { syncSubscriptionFromStripe } from "@/modules/subscription/stripe-subscription-sync.service";
 import { FastifyReply, FastifyRequest } from "fastify";
 import Stripe from "stripe";
-import makeUpdateSubscriptionService from "../subscription/factories/make-update-subscription-service.factory";
 import makeRegisterUserClinicAccountServiceFactory from "./factories/make-register-user-clinic-account-service.factory";
 
+function getObjectId(value: string | { id: string } | null) {
+  return typeof value === "string" ? value : value?.id;
+}
+
+function getInvoiceSubscriptionId(invoice: Stripe.Invoice) {
+  const subscription = invoice.parent?.subscription_details?.subscription;
+  return typeof subscription === "string" ? subscription : subscription?.id;
+}
+
+async function retrieveAndSyncSubscription(
+  stripe: Stripe,
+  stripeSubscriptionId: string,
+) {
+  const subscription = await stripe.subscriptions.retrieve(stripeSubscriptionId);
+  return syncSubscriptionFromStripe(subscription);
+}
+
 async function handleCheckoutSessionCompleted(
+  stripe: Stripe,
   session: Stripe.Checkout.Session,
   req: FastifyRequest,
 ) {
   const draftId = session.client_reference_id;
-  if (!draftId) {
+  const stripeSubscriptionId = getObjectId(session.subscription);
+
+  if (!draftId || !stripeSubscriptionId) {
     req.log.warn(
       { sessionId: session.id },
-      "checkout.session without draftId — ignoring",
+      "Checkout session without draft or subscription id",
     );
     return;
   }
 
-  const registerUserClinicAccountService =
-    makeRegisterUserClinicAccountServiceFactory();
-
-  const { user } = await registerUserClinicAccountService.exec({
-    draftId,
-    stripeCheckoutSessionId: session.id,
-    stripeCustomerId: session.customer as string,
-    stripeSubscriptionId: session.subscription as string,
-    lastStripeInvoiceId: session.invoice as string,
+  const existingSubscription = await prisma.subscription.findUnique({
+    where: { stripe_subscription_id: stripeSubscriptionId },
   });
 
-  return user;
-}
+  if (!existingSubscription) {
+    const registerUserClinicAccountService =
+      makeRegisterUserClinicAccountServiceFactory();
 
-async function handlePaymentSucceeded(session: Stripe.Event.Data) {
-  const dataSession = session.object as Stripe.Invoice;
-  if (
-    !dataSession.parent?.subscription_details?.subscription ||
-    typeof dataSession.parent?.subscription_details?.subscription !== "string"
-  ) {
-    throw new Error("Invalid subscription id");
-  }
-  if (dataSession.billing_reason === "subscription_cycle") {
-    const updateSubscriptionService = makeUpdateSubscriptionService();
-    await updateSubscriptionService.exec({
-      clinicStatus: "ACTIVE",
-      subscriptionStatus: "ACTIVE",
-      currentPeriodStart: dataSession.period_start,
-      currentPeriodEnd: dataSession.period_end,
-      lastStripeInvoiceId: dataSession.id,
-      stripeSubscriptionId:
-        dataSession.parent?.subscription_details?.subscription,
+    await registerUserClinicAccountService.exec({
+      draftId,
+      stripeCheckoutSessionId: session.id,
+      stripeCustomerId: getObjectId(session.customer) ?? "",
+      stripeSubscriptionId,
+      lastStripeInvoiceId: getObjectId(session.invoice),
     });
   }
+
+  await retrieveAndSyncSubscription(stripe, stripeSubscriptionId);
 }
 
-async function handlePaymentFailed(session: Stripe.Event.Data) {
-  const dataSession = session.object as Stripe.Invoice;
-  if (
-    !dataSession.parent?.subscription_details?.subscription ||
-    typeof dataSession.parent?.subscription_details?.subscription !== "string"
-  ) {
-    throw new Error("Invalid subscription id");
-  }
-  if (dataSession.billing_reason === "subscription_cycle") {
-    const updateSubscriptionService = makeUpdateSubscriptionService();
-    await updateSubscriptionService.exec({
-      clinicStatus: "SUSPENDED",
-      subscriptionStatus: "PAST_DUE",
-      lastStripeInvoiceId: dataSession.id,
-      stripeSubscriptionId:
-        dataSession.parent?.subscription_details?.subscription,
-    });
-  }
-}
+async function handleInvoiceChanged(stripe: Stripe, invoice: Stripe.Invoice) {
+  const stripeSubscriptionId = getInvoiceSubscriptionId(invoice);
+  if (!stripeSubscriptionId) return;
 
-async function handleSubscriptionDeleted(session: Stripe.Event.Data) {
-  const dataSession = session.object as Stripe.Invoice;
-  if (
-    !dataSession.parent?.subscription_details?.subscription ||
-    typeof dataSession.parent?.subscription_details?.subscription !== "string"
-  ) {
-    throw new Error("Invalid subscription id");
-  }
-  if (dataSession.billing_reason === "subscription_cycle") {
-    const updateSubscriptionService = makeUpdateSubscriptionService();
-    await updateSubscriptionService.exec({
-      clinicStatus: "SUSPENDED",
-      subscriptionStatus: "CANCELED",
-      lastStripeInvoiceId: dataSession.id,
-      stripeSubscriptionId:
-        dataSession.parent?.subscription_details?.subscription,
-    });
-  }
+  await retrieveAndSyncSubscription(stripe, stripeSubscriptionId);
 }
 
 export async function stripeWebhookController(
@@ -108,33 +80,35 @@ export async function stripeWebhookController(
       signature,
       env.STRIPE_WEBHOOK_SECRET,
     );
-  } catch (err) {
-    req.log.error(err, "Stripe webhook signature verification failed");
+  } catch (error) {
+    req.log.error(error, "Stripe webhook signature verification failed");
     return res.status(400).send({ message: "Invalid webhook signature" });
   }
-  res.status(200).send({ received: true });
+
   try {
     switch (event.type) {
       case "checkout.session.completed":
-        await handleCheckoutSessionCompleted(event.data.object, req);
+        await handleCheckoutSessionCompleted(stripe, event.data.object, req);
+        break;
+      case "customer.subscription.created":
+      case "customer.subscription.updated":
+      case "customer.subscription.deleted":
+      case "customer.subscription.paused":
+      case "customer.subscription.resumed":
+        await syncSubscriptionFromStripe(event.data.object);
         break;
       case "invoice.payment_succeeded":
-        await handlePaymentSucceeded(event.data);
-        break;
       case "invoice.payment_failed":
-        await handlePaymentFailed(event.data);
-        break;
-      case "customer.subscription.deleted":
-        handleSubscriptionDeleted(event.data);
-        break;
-      case "customer.subscription.updated":
-        //TODO: IMPLEMENT A METHOD TO UPDATE THE CUSTOMER PLAN
-        console.log("Customer subscription updated", event.data.object);
+      case "invoice.payment_action_required":
+        await handleInvoiceChanged(stripe, event.data.object);
         break;
       default:
         req.log.info({ type: event.type }, "Unhandled Stripe event");
     }
-  } catch (err) {
-    req.log.error(err, `Error processing Stripe event: ${event.type}`);
+
+    return res.status(200).send({ received: true });
+  } catch (error) {
+    req.log.error(error, `Error processing Stripe event: ${event.type}`);
+    return res.status(500).send({ message: "Stripe webhook processing failed" });
   }
 }

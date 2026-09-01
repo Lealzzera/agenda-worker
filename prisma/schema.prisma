@@ -214,6 +214,7 @@ model Subscription {
   stripe_checkout_session_id String? @unique
   last_stripe_invoice_id String?
   status SubscriptionStatus
+  stripe_status_checked_at DateTime?
   trial_ends_at DateTime?
   current_period_start DateTime?
   current_period_end DateTime?
@@ -290,6 +291,10 @@ enum SubscriptionStatus {
   PAST_DUE
   ACTIVE
   CANCELED
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+  UNPAID
+  PAUSED
 }
 
 enum GlobalRole {

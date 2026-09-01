@@ -7,6 +7,7 @@ import { ISignupDraftRepository } from "@/modules/signup-draft/repositories/sign
 import { ISubscriptionRepository } from "@/modules/subscription/repositories/subscription-repository.interface";
 import Stripe from "stripe";
 import makeRegisterUserClinicAccountServiceFactory from "./factories/make-register-user-clinic-account-service.factory";
+import { syncSubscriptionFromStripe } from "@/modules/subscription/stripe-subscription-sync.service";
 
 type CompleteStripeCheckoutSessionServiceRequest = {
   sessionId: string;
@@ -78,6 +79,13 @@ export class CompleteStripeCheckoutSessionService {
         lastStripeInvoiceId:
           typeof session.invoice === "string" ? session.invoice : null,
       });
+
+      if (typeof session.subscription === "string") {
+        const stripeSubscription = await stripe.subscriptions.retrieve(
+          session.subscription,
+        );
+        await syncSubscriptionFromStripe(stripeSubscription);
+      }
 
       user =
         await this.subscriptionRepository.findOwnerUserByStripeCheckoutSessionId(

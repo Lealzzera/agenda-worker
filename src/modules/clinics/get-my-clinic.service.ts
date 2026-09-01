@@ -2,6 +2,7 @@ import { IClinicMemberRepository } from "../clinic-member/repositories/clinic-me
 import { IUserRepository } from "../user/repositories/user-repository.interface";
 import { prisma } from "@/db/prisma";
 import { IClinicRepository } from "./repositories/clinic-repository.interface";
+import { getClinicSubscriptionAccess } from "../subscription/stripe-subscription-sync.service";
 
 export class GetMyClinicService {
   constructor(
@@ -22,16 +23,28 @@ export class GetMyClinicService {
 
     if (!clinicMemberFromDB) throw new Error("Clinic member not found");
 
-    const clinicFromDB = await this.clinicRepository.findById(
+    let clinicFromDB = await this.clinicRepository.findById(
       prisma,
       clinicMemberFromDB.clinic_id,
     );
 
     if (!clinicFromDB) throw new Error("Clinic not found");
 
+    const subscriptionAccess = await getClinicSubscriptionAccess(
+      clinicMemberFromDB.clinic_id,
+    );
+
+    clinicFromDB =
+      (await this.clinicRepository.findById(
+        prisma,
+        clinicMemberFromDB.clinic_id,
+      )) ?? clinicFromDB;
+
     return {
       clinicId: clinicMemberFromDB.clinic_id,
-      clinic: clinicFromDB.name,
+      clinic: clinicFromDB,
+      subscription: subscriptionAccess.subscription,
+      hasSubscriptionAccess: subscriptionAccess.allowed,
       role: clinicMemberFromDB.role,
       globalUserRole: userFromDB.role,
     };

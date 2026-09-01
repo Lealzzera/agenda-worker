@@ -11,6 +11,7 @@ import { scheduleAiReplyJob } from "../ai/ai-reply.queue";
 import { broadcastToClinic } from "../realtime/realtime-broadcaster";
 import makeFindWhatsappConversationFactory from "../whatsapp-conversations/factories/make-find-whatsapp-conversation.factory";
 import { isWhatsappConversationAiEnabled } from "../whatsapp-conversations/is-whatsapp-conversation-ai-enabled";
+import { getClinicSubscriptionAccess } from "../subscription/stripe-subscription-sync.service";
 
 const WAHA_LOOKUP_TIMEOUT_MS = 1500;
 
@@ -283,6 +284,17 @@ export async function wahaWebhookController(
             });
 
             if (!aiEnabled) {
+              break;
+            }
+            const subscriptionAccess = await getClinicSubscriptionAccess(clinicId);
+            if (!subscriptionAccess.allowed) {
+              req.log.info(
+                {
+                  clinicId,
+                  subscriptionStatus: subscriptionAccess.subscription?.status,
+                },
+                "AI reply skipped because subscription is not active",
+              );
               break;
             }
             scheduleAiReplyJob({

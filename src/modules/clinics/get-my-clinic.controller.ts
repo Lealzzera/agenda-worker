@@ -32,5 +32,13 @@ export async function getMyClinicController(
     clinic: member.clinic,
     role: member.role,
     globalUserRole: member.globalUserRole,
+    hasSubscriptionAccess: member.hasSubscriptionAccess,
+    subscription: member.subscription
+      ? {
+          status: member.subscription.status,
+          trial_ends_at: member.subscription.trial_ends_at,
+          current_period_end: member.subscription.current_period_end,
+        }
+      : null,
   });
 }

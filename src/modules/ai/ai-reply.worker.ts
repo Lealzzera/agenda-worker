@@ -15,6 +15,7 @@ import { AI_REPLY_QUEUE_NAME } from "./ai-reply.queue";
 import { createOpenAiTextResponse } from "./openai-client";
 import { sendWahaAiMessage } from "./waha-ai-message.service";
 import { stopWahaTyping } from "./waha-presence.service";
+import { getClinicSubscriptionAccess } from "@/modules/subscription/stripe-subscription-sync.service";
 
 let aiReplyWorker: BullMqWorker<AiReplyJob> | null = null;
 
@@ -39,6 +40,19 @@ export async function startAiReplyWorker() {
         session: job.data.session,
         chatId: job.data.chatId,
       });
+
+      const subscriptionAccess = await getClinicSubscriptionAccess(
+        job.data.clinicId,
+      );
+
+      if (!subscriptionAccess.allowed) {
+        console.log("AI reply job skipped because subscription is not active", {
+          jobId: job.id,
+          clinicId: job.data.clinicId,
+          subscriptionStatus: subscriptionAccess.subscription?.status,
+        });
+        return;
+      }
 
       const aiEnabled = await isWhatsappConversationAiEnabled({
         clinicId: job.data.clinicId,

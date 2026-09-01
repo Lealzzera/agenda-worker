@@ -1,3 +1,4 @@
+import { requireActiveSubscription } from "@/middlewares/require-active-subscription";
 import { verifyJwt } from "@/middlewares/verify-jwt";
 import { FastifyInstance } from "fastify";
 import {
@@ -13,7 +14,7 @@ export async function whatsappConversationsRoutes(app: FastifyInstance) {
     "/create",
     {
       config: { rateLimit: { max: 60, timeWindow: "1 minute" } },
-      preHandler: [verifyJwt],
+      preHandler: [verifyJwt, requireActiveSubscription],
     },
     async (req, res) => await createWhatsappConversationController(req, res),
   );
@@ -22,7 +23,7 @@ export async function whatsappConversationsRoutes(app: FastifyInstance) {
     "/list/:clinicId",
     {
       config: { rateLimit: { max: 60, timeWindow: "1 minute" } },
-      preHandler: [verifyJwt],
+      preHandler: [verifyJwt, requireActiveSubscription],
     },
     async (req, res) => await listWhatsappConversationsController(req, res),
   );
@@ -31,7 +32,7 @@ export async function whatsappConversationsRoutes(app: FastifyInstance) {
     "/:clinicId/:chatId",
     {
       config: { rateLimit: { max: 60, timeWindow: "1 minute" } },
-      preHandler: [verifyJwt],
+      preHandler: [verifyJwt, requireActiveSubscription],
     },
     async (req, res) => await findWhatsappConversationController(req, res),
   );
@@ -40,7 +41,7 @@ export async function whatsappConversationsRoutes(app: FastifyInstance) {
     "/:clinicId/:chatId",
     {
       config: { rateLimit: { max: 60, timeWindow: "1 minute" } },
-      preHandler: [verifyJwt],
+      preHandler: [verifyJwt, requireActiveSubscription],
     },
     async (req, res) => await updateWhatsappConversationController(req, res),
   );
@@ -49,7 +50,7 @@ export async function whatsappConversationsRoutes(app: FastifyInstance) {
     "/:clinicId",
     {
       config: { rateLimit: { max: 60, timeWindow: "1 minute" } },
-      preHandler: [verifyJwt],
+      preHandler: [verifyJwt, requireActiveSubscription],
     },
     async (req, res) => await findAllByClinicIdController(req, res),
   );
