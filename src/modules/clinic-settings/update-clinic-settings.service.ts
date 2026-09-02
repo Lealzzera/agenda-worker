@@ -38,6 +38,7 @@ export class UpdateClinicSettingsService {
     aiAgentName,
     aiCustomPrompt,
     additionalInformation,
+    timezone,
     clinicName,
     clinicType,
     address,
@@ -93,6 +94,7 @@ export class UpdateClinicSettingsService {
         aiAgentName,
         aiCustomPrompt,
         additionalInformation,
+        timezone,
       },
     );
 

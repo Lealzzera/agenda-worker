@@ -6,6 +6,11 @@ import { IClinicSpecialDateRepository } from "@/modules/clinic-special-date/repo
 import { IClinicWorkingHourRepository } from "@/modules/clinic-working-hour/repositories/clinic-working-hour-repository.interface";
 import { IClinicRepository } from "@/modules/clinics/repositories/clinic-repository.interface";
 import { WEEKDAY_BY_INDEX } from "@/types/types";
+import {
+  clinicDateTimeToUtc,
+  DEFAULT_CLINIC_TIME_ZONE,
+  getWeekdayInTimeZone,
+} from "@/helpers/clinic-date-time";
 import { Appointments, AppointmentStatus } from "@prisma/client";
 import { IAppointmentRepository } from "./repositories/appointment-repository.interface";
 
@@ -52,21 +57,22 @@ export class CreateAppointmentService {
       throw new NotFoundError("Clinic not found");
     }
 
-    const [year, month, day] = appointmentDate.split("-").map(Number);
-    const [hours, minutes] = time.split(":").map(Number);
-
-    const appointmentFormatted = new Date(
-      year,
-      month - 1,
-      day,
-      hours,
-      minutes,
-      0,
-      0,
+    const clinicSettings = await this.clinicSettingsRepository.findByClinicId(
+      prisma,
+      clinicId,
+    );
+    const timeZone = clinicSettings?.timezone ?? DEFAULT_CLINIC_TIME_ZONE;
+    const appointmentFormatted = clinicDateTimeToUtc(
+      appointmentDate,
+      time,
+      timeZone,
     );
 
     const currentDateTime = new Date();
-    const weekDay = WEEKDAY_BY_INDEX[appointmentFormatted.getDay()];
+    const weekDay = getWeekdayInTimeZone(
+      appointmentFormatted,
+      timeZone,
+    ) as (typeof WEEKDAY_BY_INDEX)[number];
 
     const isPastDate = appointmentFormatted < currentDateTime;
 
@@ -116,11 +122,6 @@ export class CreateAppointmentService {
       );
 
     if (appointmentsAlreadyBookedCount > 0) {
-      const clinicSettings = await this.clinicSettingsRepository.findByClinicId(
-        prisma,
-        clinicId,
-      );
-
       const maxAppointmentsPerSlot =
         clinicSettings?.max_appointments_per_slot ?? 1;
 

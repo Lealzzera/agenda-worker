@@ -5,11 +5,15 @@ import {
   getAiConversationHistory,
 } from "@/modules/ai/ai-conversation-memory";
 import { makeCreateAppointmentServiceFactory } from "@/modules/appointments/factories/make-create-appointment-service.factory";
+import {
+  clinicDateTimeToUtc,
+  DEFAULT_CLINIC_TIME_ZONE,
+  getWeekdayInTimeZone,
+} from "@/helpers/clinic-date-time";
 import makeCreateWhatsappConversation from "@/modules/whatsapp-conversations/factories/make-create-whatsapp-conversation.factory";
 import makeFindWhatsappConversationFactory from "@/modules/whatsapp-conversations/factories/make-find-whatsapp-conversation.factory";
 import makeUpdateWhatsappConversationFactory from "@/modules/whatsapp-conversations/factories/make-update-whatsapp-conversation.factory";
-import { WEEKDAY_BY_INDEX } from "@/types/types";
-import { AppointmentStatus } from "@prisma/client";
+import { AppointmentStatus, Weekday } from "@prisma/client";
 
 type ToolResult = Record<string, unknown>;
 
@@ -219,11 +223,12 @@ function normalizeOptionalValue(value: unknown) {
   return normalizedValue;
 }
 
-function buildAppointmentDate(appointmentDate: string, time: string) {
-  const [year, month, day] = appointmentDate.split("-").map(Number);
-  const [hours, minutes] = time.split(":").map(Number);
-
-  return new Date(year, month - 1, day, hours, minutes, 0, 0);
+function buildAppointmentDate(
+  appointmentDate: string,
+  time: string,
+  timeZone: string,
+) {
+  return clinicDateTimeToUtc(appointmentDate, time, timeZone);
 }
 
 function getCanceledStatuses() {
@@ -244,12 +249,17 @@ async function checkAppointmentFromAi({
   appointmentDate: string;
   time: string;
 }): Promise<ToolResult> {
-  const desiredAppointmentDate = buildAppointmentDate(appointmentDate, time);
-  const [clinicSettings, appointmentsAtDesiredTime, patientAppointments] =
+  const clinicSettings = await prisma.clinicSettings.findUnique({
+    where: { clinic_id: clinicId },
+  });
+  const timeZone = clinicSettings?.timezone ?? DEFAULT_CLINIC_TIME_ZONE;
+  const desiredAppointmentDate = buildAppointmentDate(
+    appointmentDate,
+    time,
+    timeZone,
+  );
+  const [appointmentsAtDesiredTime, patientAppointments] =
     await Promise.all([
-      prisma.clinicSettings.findUnique({
-        where: { clinic_id: clinicId },
-      }),
       prisma.appointments.findMany({
         where: {
           clinic_id: clinicId,
@@ -302,6 +312,7 @@ async function checkAppointmentFromAi({
       appointmentDate,
       desiredAppointmentDate,
       maxAppointmentsPerSlot,
+      timeZone,
     });
 
     return {
@@ -341,13 +352,19 @@ async function findRoundedAvailableTimes({
   appointmentDate,
   desiredAppointmentDate,
   maxAppointmentsPerSlot,
+  timeZone,
 }: {
   clinicId: string;
   appointmentDate: string;
   desiredAppointmentDate: Date;
   maxAppointmentsPerSlot: number;
+  timeZone: string;
 }) {
-  const periods = await getAppointmentPeriods(clinicId, appointmentDate);
+  const periods = await getAppointmentPeriods(
+    clinicId,
+    appointmentDate,
+    timeZone,
+  );
   const now = new Date();
   const suggestedTimes: string[] = [];
 
@@ -357,7 +374,11 @@ async function findRoundedAvailableTimes({
 
     for (let hour = startHour; hour < endHour; hour += 1) {
       const roundedTime = `${String(hour).padStart(2, "0")}:00`;
-      const roundedDate = buildAppointmentDate(appointmentDate, roundedTime);
+      const roundedDate = buildAppointmentDate(
+        appointmentDate,
+        roundedTime,
+        timeZone,
+      );
 
       if (
         roundedDate <= now ||
@@ -392,6 +413,7 @@ async function findRoundedAvailableTimes({
 async function getAppointmentPeriods(
   clinicId: string,
   appointmentDate: string,
+  timeZone: string,
 ) {
   const specialDates = await prisma.clinicSpecialDate.findMany({
     where: {
@@ -421,8 +443,10 @@ async function getAppointmentPeriods(
     return openSpecialDatePeriods;
   }
 
-  const weekday =
-    WEEKDAY_BY_INDEX[buildAppointmentDate(appointmentDate, "00:00").getDay()];
+  const weekday = getWeekdayInTimeZone(
+    buildAppointmentDate(appointmentDate, "00:00", timeZone),
+    timeZone,
+  ) as Weekday;
   const workingHours = await prisma.clinicWorkingHour.findMany({
     where: {
       clinic_id: clinicId,

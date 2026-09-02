@@ -6,6 +6,7 @@ export interface CreateClinicSettings {
   chargesEvaluation: boolean;
   evaluationPriceCents?: number | null;
   additionalInformation?: string | null;
+  timezone?: string;
 }
 
 export interface UpdateClinicSettings {
@@ -18,6 +19,7 @@ export interface UpdateClinicSettings {
   aiAgentName?: string;
   aiCustomPrompt?: string | null;
   additionalInformation?: string | null;
+  timezone?: string;
 }
 
 export interface IClinicSettingsRepository {

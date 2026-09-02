@@ -3,14 +3,28 @@ import { env } from "@/env";
 import { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
 import { ClinicRepository } from "../clinics/repositories/clinic-repository";
+import { persistWahaSession } from "./waha-session.service";
 
 type WahaSession = {
   name: string;
   status?: string;
+  engine?: {
+    engine?: string;
+  };
   me?: {
     id?: string;
   };
 };
+
+function isLegacySingleSessionError(response: {
+  message?: string;
+  statusCode?: number;
+}) {
+  return (
+    response.statusCode === 422 &&
+    response.message?.includes("support only 'default' session")
+  );
+}
 
 function buildWahaSessionConfig(clinicId: string) {
   return {
@@ -97,13 +111,13 @@ export async function postQrCodeController(
   res: FastifyReply,
 ) {
   const bodySchema = z.object({
-    sessionName: z.string(),
     clinicId: z.string(),
   });
 
   const clinicRepository = new ClinicRepository();
 
-  const { sessionName, clinicId } = bodySchema.parse(req.body);
+  const { clinicId } = bodySchema.parse(req.body);
+  const sessionName = clinicId;
 
   if (!env.WAHA_API_KEY) {
     return res.status(500).send({ error: "WAHA_API_KEY is not defined" });
@@ -131,6 +145,12 @@ export async function postQrCodeController(
 
     if (existingSession) {
       await updateWahaSessionConfig(sessionName, clinicId);
+      await persistWahaSession(clinicId, {
+        name: existingSession.name,
+        status: existingSession.status,
+        phoneNumber: existingSession.me?.id,
+        engine: existingSession.engine?.engine,
+      });
     }
 
     switch (existingSession?.status) {
@@ -150,6 +170,7 @@ export async function postQrCodeController(
 
       case "SCAN_QR_CODE":
         return res.status(200).send({
+          sessionName,
           qrCode: await getQrCodeImage(sessionName),
         });
 
@@ -181,6 +202,18 @@ export async function postQrCodeController(
 
     const responseJson = await wahaSession.json();
 
+    if (isLegacySingleSessionError(responseJson)) {
+      req.log.error(
+        { response: responseJson },
+        "WAHA version does not support multiple sessions",
+      );
+      return res.status(503).send({
+        code: "WAHA_MULTIPLE_SESSIONS_UNAVAILABLE",
+        error:
+          "The running WAHA image is older than 2026.6.1. Update the WAHA container to enable one session per clinic.",
+      });
+    }
+
     if (responseJson.statusCode === 422) {
       await updateWahaSessionConfig(sessionName, clinicId);
 
@@ -198,11 +231,20 @@ export async function postQrCodeController(
       await restartSession.json();
 
       return res.status(200).send({
+        sessionName,
         qrCode: await getQrCodeImage(sessionName),
       });
     }
 
+    await persistWahaSession(clinicId, {
+      name: sessionName,
+      status: responseJson.status,
+      phoneNumber: responseJson.me?.id,
+      engine: responseJson.engine?.engine,
+    });
+
     return res.status(200).send({
+      sessionName,
       qrCode: await getQrCodeImage(sessionName),
     });
   } catch (error) {

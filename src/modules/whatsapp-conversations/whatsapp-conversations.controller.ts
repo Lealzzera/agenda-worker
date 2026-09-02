@@ -35,7 +35,7 @@ export async function createWhatsappConversationController(
     phoneNumber: z.string(),
   });
 
-  const { clinicId, chatId, aiEnabled, session, phoneNumber } =
+  const { clinicId, chatId, aiEnabled, phoneNumber } =
     createBodySchema.parse(req.body);
 
   const createWhatsappConversationService = makeCreateWhatsappConversation();
@@ -44,7 +44,7 @@ export async function createWhatsappConversationController(
     clinicId,
     chatId,
     aiEnabled,
-    session,
+    session: clinicId,
     phoneNumber,
   });
 
@@ -62,12 +62,12 @@ export async function updateWhatsappConversationController(
 
   const updateBodySchema = z.object({
     aiEnabled: z.boolean(),
-    session: z.string().default("default"),
+    session: z.string(),
     phoneNumber: z.string(),
   });
 
   const { clinicId, chatId } = updateParamsSchema.parse(req.params);
-  const { aiEnabled, session, phoneNumber } = updateBodySchema.parse(req.body);
+  const { aiEnabled, phoneNumber } = updateBodySchema.parse(req.body);
 
   const createWhatsappConversationService = makeCreateWhatsappConversation();
 
@@ -75,7 +75,7 @@ export async function updateWhatsappConversationController(
     clinicId,
     chatId,
     aiEnabled,
-    session,
+    session: clinicId,
     phoneNumber,
   });
 
