@@ -40,6 +40,7 @@ export async function signupDraftController(
       settings: z.object({
         chargesEvaluation: z.boolean().optional(),
         evaluationPriceCents: z.number().optional(),
+        timezone: z.string().min(1).optional(),
       }),
     }),
     acceptedTerms: z.boolean(),

@@ -5,6 +5,13 @@ import { IClinicSettingsRepository } from "@/modules/clinic-settings/repositorie
 import { IClinicSpecialDateRepository } from "@/modules/clinic-special-date/repositories/clinic-special-date-repository.interface";
 import { IClinicWorkingHourRepository } from "@/modules/clinic-working-hour/repositories/clinic-working-hour-repository.interface";
 import { WEEKDAY_BY_INDEX } from "@/types/types";
+import {
+  clinicDateTimeToUtc,
+  DEFAULT_CLINIC_TIME_ZONE,
+  formatDateInTimeZone,
+  formatTimeInTimeZone,
+  getWeekdayInTimeZone,
+} from "@/helpers/clinic-date-time";
 import { Appointments, AppointmentStatus } from "@prisma/client";
 import { IAppointmentRepository } from "./repositories/appointment-repository.interface";
 
@@ -54,16 +61,22 @@ export class UpdateAppointmentService {
     let rescheduledAppointmentDate: Date | undefined;
 
     if (isReschedulingDateTime) {
+      const clinicSettings = await this.clinicSettingsRepository.findByClinicId(
+        prisma,
+        existingAppointment.clinic_id,
+      );
+      const timeZone = clinicSettings?.timezone ?? DEFAULT_CLINIC_TIME_ZONE;
       const dateStringToParse =
         appointmentDate ??
-        this.formatDateToYearMonthDay(existingAppointment.appointment_date);
+        formatDateInTimeZone(existingAppointment.appointment_date, timeZone);
 
       const timeStringToParse =
-        time ?? this.formatTimeToHoursMinutes(existingAppointment.appointment_date);
+        time ?? formatTimeInTimeZone(existingAppointment.appointment_date, timeZone);
 
       rescheduledAppointmentDate = this.buildAppointmentDate(
         dateStringToParse,
         timeStringToParse,
+        timeZone,
       );
 
       await this.assertRescheduleIsAllowed({
@@ -71,6 +84,7 @@ export class UpdateAppointmentService {
         rescheduledAppointmentDate,
         rescheduledAppointmentDateString: dateStringToParse,
         appointmentBeingUpdatedId: appointmentId,
+        timeZone,
       });
     }
 
@@ -89,24 +103,12 @@ export class UpdateAppointmentService {
     return { appointment: updatedAppointment };
   }
 
-  private buildAppointmentDate(dateString: string, timeString: string): Date {
-    const [year, month, day] = dateString.split("-").map(Number);
-    const [hours, minutes] = timeString.split(":").map(Number);
-
-    return new Date(year, month - 1, day, hours, minutes, 0, 0);
-  }
-
-  private formatDateToYearMonthDay(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  }
-
-  private formatTimeToHoursMinutes(date: Date): string {
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
-    return `${hours}:${minutes}`;
+  private buildAppointmentDate(
+    dateString: string,
+    timeString: string,
+    timeZone: string,
+  ): Date {
+    return clinicDateTimeToUtc(dateString, timeString, timeZone);
   }
 
   private async assertRescheduleIsAllowed({
@@ -114,11 +116,13 @@ export class UpdateAppointmentService {
     rescheduledAppointmentDate,
     rescheduledAppointmentDateString,
     appointmentBeingUpdatedId,
+    timeZone,
   }: {
     clinicId: string;
     rescheduledAppointmentDate: Date;
     rescheduledAppointmentDateString: string;
     appointmentBeingUpdatedId: string;
+    timeZone: string;
   }): Promise<void> {
     const currentDateTime = new Date();
 
@@ -128,8 +132,10 @@ export class UpdateAppointmentService {
       );
     }
 
-    const weekDay =
-      WEEKDAY_BY_INDEX[rescheduledAppointmentDate.getDay()];
+    const weekDay = getWeekdayInTimeZone(
+      rescheduledAppointmentDate,
+      timeZone,
+    ) as (typeof WEEKDAY_BY_INDEX)[number];
 
     const clinicSpecialDate =
       await this.clinicSpecialDateRepository.findManyByClinicIdAndDate(

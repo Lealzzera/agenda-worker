@@ -16,6 +16,7 @@ export interface ISettingsInput {
   chargesEvaluation?: boolean;
   evaluationPriceCents?: number;
   additionalInformation?: string | null;
+  timezone?: string;
 }
 
 export const WEEKDAY_BY_INDEX: Weekday[] = [
@@ -83,16 +84,22 @@ export type WahaWebhookBody = {
   };
   payload?: {
     clinicId?: string;
+    status?: string;
     metadata?: {
       clinicId?: string;
     };
-    _data: {
+    _data?: {
       Info?: {
         IsGroup: boolean;
       };
     };
   };
   session?: string;
+  me?: {
+    id?: string;
+    pushName?: string;
+  };
+  engine?: string;
 };
 
 export type AiReplyJob = {

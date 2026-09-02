@@ -15,14 +15,33 @@ export async function requireActiveSubscription(req: FastifyRequest, res: Fastif
     });
   }
 
-  const params = (req.params ?? {}) as { clinicId?: string };
-  const body = (req.body ?? {}) as { clinicId?: string };
+  const params = (req.params ?? {}) as {
+    clinicId?: string;
+    sessionName?: string;
+  };
+  const body = (req.body ?? {}) as {
+    clinicId?: string;
+    session?: string;
+    sessionName?: string;
+  };
   const requestedClinicId = params.clinicId ?? body.clinicId;
+  const requestedSessionName =
+    params.sessionName ?? body.sessionName ?? body.session;
 
   if (requestedClinicId && requestedClinicId !== membership.clinic_id) {
     return res.status(403).send({
       code: "CLINIC_ACCESS_DENIED",
       message: "The requested clinic does not belong to this user.",
+    });
+  }
+
+  if (
+    requestedSessionName &&
+    requestedSessionName !== membership.clinic_id
+  ) {
+    return res.status(403).send({
+      code: "WHATSAPP_SESSION_ACCESS_DENIED",
+      message: "The requested WhatsApp session does not belong to this user.",
     });
   }
 

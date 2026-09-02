@@ -1,6 +1,7 @@
 import { env } from "@/env";
 import { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
+import { prisma } from "@/db/prisma";
 
 export async function disconnectController(
   req: FastifyRequest,
@@ -32,6 +33,14 @@ export async function disconnectController(
       );
       return res.status(502).send({ error: "Failed to disconnect session" });
     }
+
+    await prisma.whatsAppSession.updateMany({
+      where: { session_name: sessionName },
+      data: {
+        status: "STOPPED",
+        phone_number: null,
+      },
+    });
 
     return res.send({ status: "DISCONNECTED" });
   } catch (error) {

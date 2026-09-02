@@ -4,6 +4,10 @@ import { NotFoundError } from "@/errors/not-found.error";
 import { IClinicRepository } from "@/modules/clinics/repositories/clinic-repository.interface";
 import { Appointments, AppointmentStatus } from "@prisma/client";
 import { IAppointmentRepository } from "./repositories/appointment-repository.interface";
+import {
+  clinicDateTimeToUtc,
+  DEFAULT_CLINIC_TIME_ZONE,
+} from "@/helpers/clinic-date-time";
 
 interface IListAppointmentsRequest {
   clinicId: string;
@@ -37,12 +41,18 @@ export class ListAppointmentsService {
       throw new NotFoundError("Clinic not found");
     }
 
+    const clinicSettings = await prisma.clinicSettings.findUnique({
+      where: { clinic_id: clinicId },
+      select: { timezone: true },
+    });
+    const timeZone = clinicSettings?.timezone ?? DEFAULT_CLINIC_TIME_ZONE;
+
     const parsedStartDate = startDate
-      ? this.parseDateString(startDate, "startDate")
+      ? this.parseDateString(startDate, "startDate", timeZone, false)
       : undefined;
 
     const parsedEndDate = endDate
-      ? this.parseDateString(endDate, "endDate")
+      ? this.parseDateString(endDate, "endDate", timeZone, true)
       : undefined;
 
     if (parsedStartDate && parsedEndDate && parsedEndDate < parsedStartDate) {
@@ -62,19 +72,22 @@ export class ListAppointmentsService {
     return { appointments };
   }
 
-  private parseDateString(dateString: string, fieldName: string): Date {
-    const [year, month, day] = dateString.split("-").map(Number);
-    const parsedDate = new Date(year, month - 1, day);
-
-    const isValidDate =
-      parsedDate.getFullYear() === year &&
-      parsedDate.getMonth() === month - 1 &&
-      parsedDate.getDate() === day;
-
-    if (!isValidDate) {
+  private parseDateString(
+    dateString: string,
+    fieldName: string,
+    timeZone: string,
+    endOfDay: boolean,
+  ): Date {
+    try {
+      const parsedDate = clinicDateTimeToUtc(
+        dateString,
+        endOfDay ? "23:59:59" : "00:00:00",
+        timeZone,
+      );
+      if (endOfDay) parsedDate.setUTCMilliseconds(999);
+      return parsedDate;
+    } catch {
       throw new BadRequestError(`Invalid ${fieldName}. Expected YYYY-MM-DD.`);
     }
-
-    return parsedDate;
   }
 }

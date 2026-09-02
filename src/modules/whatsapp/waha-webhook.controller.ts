@@ -12,6 +12,7 @@ import { broadcastToClinic } from "../realtime/realtime-broadcaster";
 import makeFindWhatsappConversationFactory from "../whatsapp-conversations/factories/make-find-whatsapp-conversation.factory";
 import { isWhatsappConversationAiEnabled } from "../whatsapp-conversations/is-whatsapp-conversation-ai-enabled";
 import { getClinicSubscriptionAccess } from "../subscription/stripe-subscription-sync.service";
+import { persistWahaSession } from "./waha-session.service";
 
 const WAHA_LOOKUP_TIMEOUT_MS = 1500;
 
@@ -231,8 +232,27 @@ export async function wahaWebhookController(
   ) as WahaWebhookBody;
   const clinicId = await resolveClinicIdFromWebhook(body);
   if (clinicId) {
+    if (body.session !== clinicId) {
+      req.log.warn(
+        { clinicId, session: body.session },
+        "Ignoring WAHA webhook from a session that does not match its clinic",
+      );
+      return res.status(200).send({
+        ok: true,
+        message: "Webhook ignored because session does not match clinic",
+      });
+    }
+
     switch (body.event) {
       case "session.status":
+        if (body.session) {
+          await persistWahaSession(clinicId, {
+            name: body.session,
+            status: body.payload?.status,
+            phoneNumber: body.me?.id,
+            engine: body.engine,
+          });
+        }
         broadcastToClinic(clinicId, {
           event: "sesion_status",
           payload: body,

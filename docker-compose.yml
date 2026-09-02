@@ -13,7 +13,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   waha:
-    image: devlikeapro/waha:gows-2026.4.3
+    image: devlikeapro/waha:gows-2026.8.1
     container_name: agenda-worker-waha
     restart: always
     ports:
@@ -23,10 +23,11 @@ services:
       - WAHA_WEBHOOK_URL=${WAHA_WEBHOOK_URL}
       - WAHA_DASHBOARD_USERNAME=${WAHA_DASHBOARD_USERNAME}
       - WAHA_DASHBOARD_PASSWORD=${WAHA_DASHBOARD_PASSWORD}
+      - WHATSAPP_DEFAULT_ENGINE=GOWS
       - WHATSAPP_SWAGGER_USERNAME=${WHATSAPP_SWAGGER_USERNAME}
       - WHATSAPP_SWAGGER_PASSWORD=${WHATSAPP_SWAGGER_PASSWORD}
     volumes:
-      - waha_sessions:/app/src/sessions
+      - waha_sessions:/app/.sessions
 
   redis:
     image: redis:7-alpine

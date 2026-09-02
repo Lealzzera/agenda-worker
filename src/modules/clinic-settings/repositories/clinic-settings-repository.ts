@@ -14,6 +14,7 @@ export class ClinicSettingsRepository implements IClinicSettingsRepository {
       chargesEvaluation,
       evaluationPriceCents,
       additionalInformation,
+      timezone,
     }: CreateClinicSettings,
   ): Promise<ClinicSettings> {
     const clinicSettings = await client.clinicSettings.create({
@@ -22,6 +23,7 @@ export class ClinicSettingsRepository implements IClinicSettingsRepository {
         charges_evaluation: chargesEvaluation,
         evaluation_price_cents: evaluationPriceCents,
         additional_information: additionalInformation,
+        ...(timezone !== undefined && { timezone }),
       },
     });
     return clinicSettings;
@@ -74,6 +76,7 @@ export class ClinicSettingsRepository implements IClinicSettingsRepository {
         ...(data.additionalInformation !== undefined && {
           additional_information: data.additionalInformation,
         }),
+        ...(data.timezone !== undefined && { timezone: data.timezone }),
       },
     });
     return updatedClinicSettings;

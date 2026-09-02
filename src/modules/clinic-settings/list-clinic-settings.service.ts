@@ -24,6 +24,7 @@ interface IListClinicSettingsResponse {
   aiAgentName: string | null;
   aiCustomPrompt: string | null;
   additionalInformation: string | null;
+  timezone: string;
 }
 
 export class ListClinicSettingsService {
@@ -69,6 +70,7 @@ export class ListClinicSettingsService {
       aiAgentName: clinicSettings.ai_agent_name,
       aiCustomPrompt: clinicSettings.ai_custom_prompt,
       additionalInformation: clinicSettings.additional_information,
+      timezone: clinicSettings.timezone,
     };
   }
 }

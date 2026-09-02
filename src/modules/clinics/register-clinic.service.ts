@@ -170,6 +170,7 @@ export class RegisterClinicService {
             ? settings.evaluationPriceCents
             : 0,
           additionalInformation: settings.additionalInformation?.trim() || null,
+          timezone: settings.timezone,
         });
       }
 
