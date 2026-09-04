@@ -1,7 +1,9 @@
 import { prisma } from "@/db/prisma";
 import { NotFoundError } from "@/errors/not-found.error";
 import { AiConversationTurn } from "@/modules/ai/ai-conversation-memory";
+import { GlobalAiPromptRepository } from "@/modules/clinic-settings/repositories/global-ai-prompt-repository";
 import { AiReplyJob } from "@/types/types";
+import { ClinicType } from "@prisma/client";
 import { normalizeClinicAiPrompt } from "./clinic-ai-prompt";
 
 type BuildAiReplyPromptInput = {
@@ -51,6 +53,13 @@ function buildInstructions(clinicAiPrompt: string) {
   return `
 Voce deve seguir as instrucoes personalizadas da clinica para tom, comportamento, estilo de atendimento e regras comerciais, desde que elas nao contrariem as regras fixas de uso das ferramentas abaixo.
 NUNCA EM HIPÓTESE ALGUMA INFORME SERVIÇOS FEITOS PELA CLÍNICA OU CONFIRME AO USUÁRIO QUE A CLÍNICA FAZ DETERMINADO SERVIÇO, CASO O USUÁRIO PERGUNTE A SUA RESPOSTA DEVE SER "Informações sobre serviços deve ser consultada com o departamento específico. Quer que eu te direcione?" SE O USUÁRIO SOLICITAR UM DIRECIONAMENTO VOCÊ USA TOOL "handoff_to_human" 
+
+Regra obrigatoria sobre o tipo da clinica:
+
+* Considere o campo "Tipo da clinica" do contexto como a unica fonte de verdade para identificar a area da clinica.
+* Nunca confirme que a clinica e odontologica, medica, estetica ou de psicologia quando isso for diferente do tipo informado no contexto.
+* Quando o paciente perguntar se a clinica pertence a uma area diferente, corrija a informacao de forma clara e informe o tipo real da clinica.
+* O tipo da clinica nao comprova que um servico ou procedimento especifico seja oferecido. Continue seguindo a regra de nao confirmar servicos.
 
 Instrucoes personalizadas da clinica:
 
@@ -125,22 +134,26 @@ function formatConversationHistory(conversationHistory: AiConversationTurn[]) {
 }
 
 async function buildClinicAiContext(clinicId: string) {
-  const clinic = await prisma.clinic.findUnique({
-    where: { id: clinicId },
-    include: {
-      clinic_settings: true,
-      services: {
-        orderBy: { created_at: "asc" },
+  const globalAiPromptRepository = new GlobalAiPromptRepository();
+  const [clinic, globalAiPrompt] = await Promise.all([
+    prisma.clinic.findUnique({
+      where: { id: clinicId },
+      include: {
+        clinic_settings: true,
+        services: {
+          orderBy: { created_at: "asc" },
+        },
+        working_hours: {
+          orderBy: { weekday: "asc" },
+        },
+        special_dates: {
+          orderBy: { date: "asc" },
+          take: 20,
+        },
       },
-      working_hours: {
-        orderBy: { weekday: "asc" },
-      },
-      special_dates: {
-        orderBy: { date: "asc" },
-        take: 20,
-      },
-    },
-  });
+    }),
+    globalAiPromptRepository.find(prisma),
+  ]);
 
   if (!clinic) {
     throw new NotFoundError("Clinic not found");
@@ -180,10 +193,12 @@ async function buildClinicAiContext(clinicId: string) {
       ).toFixed(2)}.`
     : "A clinica nao cobra consulta inicial.";
 
+  const clinicType = formatClinicType(clinic.type);
+
   const clinicContext = `
 Clinica: ${clinic.name}
 Nome do agente: ${clinic.clinic_settings?.ai_agent_name ?? "Pandora"}
-Tipo: ${clinic.type}
+Tipo da clinica (fonte obrigatoria): ${clinicType}
 Telefone: ${clinic.phone ?? "nao informado"}
 Cidade/estado: ${clinic.city ?? "nao informado"} - ${clinic.state ?? "nao informado"}
 Endereco: ${clinic.address ?? "nao informado"}
@@ -204,8 +219,18 @@ ${specialDates}
 
   return {
     clinicContext,
-    clinicAiPrompt: normalizeClinicAiPrompt(
-      clinic.clinic_settings?.ai_custom_prompt,
-    ),
+    clinicAiPrompt: normalizeClinicAiPrompt(globalAiPrompt),
   };
+}
+
+function formatClinicType(clinicType: ClinicType) {
+  const clinicTypeLabels: Record<ClinicType, string> = {
+    DENTAL: "Clinica odontologica (dentista)",
+    MEDICAL: "Clinica medica",
+    AESTHETIC: "Clinica de estetica",
+    PSYCHOLOGY: "Clinica de psicologia",
+    OTHER: "Clinica de outro tipo",
+  };
+
+  return clinicTypeLabels[clinicType];
 }

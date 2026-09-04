@@ -1,13 +1,6 @@
-import { ClinicRepository } from "@/modules/clinics/repositories/clinic-repository";
-import { ClinicSettingsRepository } from "../repositories/clinic-settings-repository";
+import { GlobalAiPromptRepository } from "../repositories/global-ai-prompt-repository";
 import { UpdateClinicAiPromptService } from "../update-clinic-ai-prompt.service";
 
 export default function makeUpdateClinicAiPromptServiceFactory() {
-  const clinicRepository = new ClinicRepository();
-  const clinicSettingsRepository = new ClinicSettingsRepository();
-
-  return new UpdateClinicAiPromptService(
-    clinicRepository,
-    clinicSettingsRepository,
-  );
+  return new UpdateClinicAiPromptService(new GlobalAiPromptRepository());
 }

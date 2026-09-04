@@ -29,10 +29,8 @@ export async function listClinicAiPromptController(
   req: FastifyRequest,
   res: FastifyReply,
 ) {
-  const { clinicId } = req.params as { clinicId: string };
-
   const listClinicAiPromptService = makeListClinicAiPromptServiceFactory();
-  const clinicAiPrompt = await listClinicAiPromptService.exec({ clinicId });
+  const clinicAiPrompt = await listClinicAiPromptService.exec();
 
   return res.status(200).send(clinicAiPrompt);
 }
@@ -42,16 +40,15 @@ export async function updateClinicAiPromptController(
   res: FastifyReply,
 ) {
   const updateClinicAiPromptBodySchema = z.object({
-    prompt: z.string(),
+    prompt: z.string().trim().min(1, "Prompt is required"),
   });
 
-  const { clinicId } = req.params as { clinicId: string };
   const { prompt } = updateClinicAiPromptBodySchema.parse(req.body);
 
   const updateClinicAiPromptService = makeUpdateClinicAiPromptServiceFactory();
   const clinicAiPrompt = await updateClinicAiPromptService.exec({
-    clinicId,
     prompt,
+    userRole: req.user.role,
   });
 
   return res.status(200).send(clinicAiPrompt);
@@ -69,7 +66,6 @@ export async function updateClinicSettingsController(
     allowRescheduling: z.boolean(),
     allowCancellation: z.boolean(),
     aiAgentName: z.string(),
-    aiCustomPrompt: z.string().max(6000).nullable().optional(),
     additionalInformation: z.string().nullable().optional(),
     timezone: z.string().optional(),
     clinicName: z.string().optional(),
@@ -90,7 +86,6 @@ export async function updateClinicSettingsController(
     allowRescheduling,
     allowCancellation,
     aiAgentName,
-    aiCustomPrompt,
     additionalInformation,
     timezone,
     clinicName,
@@ -108,7 +103,6 @@ export async function updateClinicSettingsController(
     allowCancellation,
     allowRescheduling,
     appointmentDurationMinutes,
-    aiCustomPrompt,
     additionalInformation,
     timezone,
     chargesEvaluation,

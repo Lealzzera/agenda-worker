@@ -1,4 +1,5 @@
 import { verifyJwt } from "@/middlewares/verify-jwt";
+import { verifyAdmin } from "@/middlewares/verify-admin";
 import { FastifyInstance } from "fastify";
 import {
   listClinicAiPromptController,
@@ -9,18 +10,18 @@ import {
 
 export async function clinicSettingsRoutes(app: FastifyInstance) {
   app.get(
-    "/:clinicId/ai-prompt",
+    "/ai-prompt",
     {
-      preHandler: [verifyJwt],
+      preHandler: [verifyJwt, verifyAdmin],
       config: { rateLimit: { max: 100, timeWindow: "1 minute" } },
     },
     async (req, res) => await listClinicAiPromptController(req, res),
   );
 
   app.post(
-    "/:clinicId/ai-prompt",
+    "/ai-prompt",
     {
-      preHandler: [verifyJwt],
+      preHandler: [verifyJwt, verifyAdmin],
       config: { rateLimit: { max: 20, timeWindow: "1 minute" } },
     },
     async (req, res) => await updateClinicAiPromptController(req, res),

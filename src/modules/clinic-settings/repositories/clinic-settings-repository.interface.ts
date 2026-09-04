@@ -17,7 +17,6 @@ export interface UpdateClinicSettings {
   allowRescheduling?: boolean;
   allowCancellation?: boolean;
   aiAgentName?: string;
-  aiCustomPrompt?: string | null;
   additionalInformation?: string | null;
   timezone?: string;
 }

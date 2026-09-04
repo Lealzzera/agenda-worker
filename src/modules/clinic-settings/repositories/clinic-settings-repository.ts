@@ -70,9 +70,6 @@ export class ClinicSettingsRepository implements IClinicSettingsRepository {
         ...(data.aiAgentName !== undefined && {
           ai_agent_name: data.aiAgentName,
         }),
-        ...(data.aiCustomPrompt !== undefined && {
-          ai_custom_prompt: data.aiCustomPrompt,
-        }),
         ...(data.additionalInformation !== undefined && {
           additional_information: data.additionalInformation,
         }),

@@ -1,12 +1,11 @@
 import { normalizeClinicAiPrompt } from "@/helpers/clinic-ai-prompt";
 import { prisma } from "@/db/prisma";
-import { NotFoundError } from "@/errors/not-found.error";
-import { IClinicRepository } from "@/modules/clinics/repositories/clinic-repository.interface";
-import { IClinicSettingsRepository } from "./repositories/clinic-settings-repository.interface";
+import { ForbiddenError } from "@/errors/forbidden.error";
+import { IGlobalAiPromptRepository } from "./repositories/global-ai-prompt-repository.interface";
 
 interface UpdateClinicAiPromptRequest {
-  clinicId: string;
   prompt: string;
+  userRole: "ADMIN" | "USER";
 }
 
 interface UpdateClinicAiPromptResponse {
@@ -15,41 +14,25 @@ interface UpdateClinicAiPromptResponse {
 
 export class UpdateClinicAiPromptService {
   constructor(
-    private readonly clinicRepository: IClinicRepository,
-    private readonly clinicSettingsRepository: IClinicSettingsRepository,
+    private readonly globalAiPromptRepository: IGlobalAiPromptRepository,
   ) {}
 
   async exec({
-    clinicId,
     prompt,
+    userRole,
   }: UpdateClinicAiPromptRequest): Promise<UpdateClinicAiPromptResponse> {
-    const clinic = await this.clinicRepository.findById(prisma, clinicId);
-
-    if (!clinic) {
-      throw new NotFoundError("Clinic not found");
-    }
-
-    const clinicSettings = await this.clinicSettingsRepository.findByClinicId(
-      prisma,
-      clinicId,
-    );
-
-    if (!clinicSettings) {
-      throw new NotFoundError("Clinic settings not found for this clinic.");
+    if (userRole !== "ADMIN") {
+      throw new ForbiddenError("Only administrators can update the AI prompt");
     }
 
     const normalizedPrompt = normalizeClinicAiPrompt(prompt);
-
-    const updatedClinicSettings = await this.clinicSettingsRepository.update(
+    const updatedPrompt = await this.globalAiPromptRepository.upsert(
       prisma,
-      clinicId,
-      {
-        aiCustomPrompt: normalizedPrompt,
-      },
+      normalizedPrompt,
     );
 
     return {
-      prompt: normalizeClinicAiPrompt(updatedClinicSettings.ai_custom_prompt),
+      prompt: updatedPrompt,
     };
   }
 }
